@@ -1,4 +1,6 @@
-﻿using z80;
+﻿using System;
+using System.IO;
+using z80;
 
 namespace z80Sample
 {

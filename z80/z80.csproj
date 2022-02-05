@@ -3,16 +3,18 @@
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
 		<TargetFramework>net6.0</TargetFramework>
-		<ProduceReferenceAssembly>True</ProduceReferenceAssembly>
+		<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
 		<ErrorReport>none</ErrorReport>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-	  <Optimize>False</Optimize>
+	  <Optimize>True</Optimize>
+	  <DefineConstants>$(DefineConstants)</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	  <Optimize>True</Optimize>
+	  <Optimize>False</Optimize>
+	  <DefineConstants>$(DefineConstants)</DefineConstants>
 	</PropertyGroup>
 
 </Project>
