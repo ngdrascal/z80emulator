@@ -1,12 +1,10 @@
-﻿using System;
-using System.IO;
-using z80;
+﻿using z80;
 
 namespace z80Sample
 {
-    internal class Program
+    internal static class Program
     {
-        private static void Main(string[] args)
+        private static void Main()
         {
             var ram = new byte[65536];
             Array.Clear(ram, 0, ram.Length);
