@@ -15,7 +15,7 @@ namespace z80Sample
 
             Array.Copy(inp, ram, 16384);
 
-            var myZ80 = new Z80(new Memory(ram, 16384), new SamplePorts());
+            var myZ80 = new Z80(new Memory(ram, 16384), new SamplePorts(), new ConsoleLogger());
             Console.Clear();
             //var counter = 0;
             while (!myZ80.Halt)

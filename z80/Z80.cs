@@ -38,13 +38,15 @@ namespace z80
         private int interruptMode;
 
         private readonly IPorts ports;
+        private readonly IInstructionLogger _logger;
 
-        public Z80(Memory memory, IPorts ports)
+        public Z80(Memory memory, IPorts ports, IInstructionLogger logger)
         {
             if (memory == null) throw new ArgumentNullException(nameof(memory));
             if (ports == null) throw new ArgumentNullException(nameof(ports));
             mem = memory;
             this.ports = ports;
+            _logger = logger;
             Reset();
         }
 
@@ -71,7 +73,7 @@ namespace z80
                 IFF1 = IFF2;
                 IFF1 = false;
 #if (DEBUG)
-                Log("NMI");
+                _logger.Log("NMI");
 #endif
                 Wait(17);
                 Halt = false;
@@ -98,7 +100,7 @@ namespace z80
                             Wait(17);
 
 #if (DEBUG)
-                            Log("MI 0");
+                            _logger.Log("MI 0");
 #endif
                             Halt = false;
                             return;
@@ -113,7 +115,7 @@ namespace z80
                             registers[PC] = 0x00;
                             registers[PC + 1] = 0x38;
 #if (DEBUG)
-                            Log("MI 1");
+                            _logger.Log("MI 1");
 #endif
                             Wait(17);
                             Halt = false;
@@ -131,7 +133,7 @@ namespace z80
                             registers[PC] = mem[address++];
                             registers[PC + 1] = mem[address];
 #if (DEBUG)
-                            Log("MI 2");
+                            _logger.Log("MI 2");
 #endif
                             Wait(17);
                             Halt = false;
@@ -152,7 +154,7 @@ namespace z80
                 if (useHL2 && useHL1)
                 {
 #if(DEBUG)
-                    Log("HALT");
+                    _logger.Log("HALT");
 #endif
                     Halt = true;
                     return;
@@ -165,7 +167,7 @@ namespace z80
                     registers[r] = reg;
                 Wait(useHL1 || useHL2 ? 7 : 4);
 #if (DEBUG)
-                Log($"LD {(useHL1 ? "(HL)" : RName(r))}, {(useHL2 ? "(HL)" : RName(lo))}");
+                _logger.Log($"LD {(useHL1 ? "(HL)" : _logger.RName(r))}, {(useHL2 ? "(HL)" : _logger.RName(lo))}");
 #endif
                 return;
             }
@@ -186,7 +188,7 @@ namespace z80
                 case 0x00:
                     // NOP
 #if(DEBUG)
-                    Log("NOP");
+                    _logger.Log("NOP");
 #endif
                     Wait(4);
                     return;
@@ -198,7 +200,7 @@ namespace z80
                         registers[r + 1] = Fetch();
                         registers[r] = Fetch();
 #if (DEBUG)
-                        Log($"LD {RName(r)}{RName((byte)(r + 1))}, 0x{registers[r]:X2}{registers[r + 1]:X2}");
+                        _logger.Log($"LD {_logger.RName(r)}{_logger.RName((byte)(r + 1))}, 0x{registers[r]:X2}{registers[r + 1]:X2}");
 #endif
                         Wait(10);
                         return;
@@ -209,7 +211,7 @@ namespace z80
                         registers[SP + 1] = Fetch();
                         registers[SP] = Fetch();
 #if (DEBUG)
-                        Log($"LD SP, 0x{registers[SP]:X2}{registers[SP + 1]:X2}");
+                        _logger.Log($"LD SP, 0x{registers[SP]:X2}{registers[SP + 1]:X2}");
 #endif
                         Wait(10);
                         return;
@@ -226,7 +228,7 @@ namespace z80
                         var n = Fetch();
                         registers[r] = n;
 #if (DEBUG)
-                        Log($"LD {RName(r)}, 0x{n:X2}");
+                        _logger.Log($"LD {_logger.RName(r)}, 0x{n:X2}");
 #endif
                         Wait(7);
                         return;
@@ -237,7 +239,7 @@ namespace z80
                         var n = Fetch();
                         mem[Hl] = n;
 #if (DEBUG)
-                        Log($"LD (HL), {n}");
+                        _logger.Log($"LD (HL), {n}");
 #endif
                         Wait(10);
                         return;
@@ -247,7 +249,7 @@ namespace z80
                         // LD A, (BC)
                         registers[A] = mem[Bc];
 #if (DEBUG)
-                        Log("LD A, (BC)");
+                        _logger.Log("LD A, (BC)");
 #endif
                         Wait(7);
                         return;
@@ -257,7 +259,7 @@ namespace z80
                         // LD A, (DE)
                         registers[A] = mem[De];
 #if (DEBUG)
-                        Log("LD A, (DE)");
+                        _logger.Log("LD A, (DE)");
 #endif
                         Wait(7);
                         return;
@@ -268,7 +270,7 @@ namespace z80
                         var addr = Fetch16();
                         registers[A] = mem[addr];
 #if (DEBUG)
-                        Log($"LD A, (0x{addr:X4})");
+                        _logger.Log($"LD A, (0x{addr:X4})");
 #endif
                         Wait(13);
                         return;
@@ -278,7 +280,7 @@ namespace z80
                         // LD (BC), A
                         mem[Bc] = registers[A];
 #if (DEBUG)
-                        Log("LD (BC), A");
+                        _logger.Log("LD (BC), A");
 #endif
                         Wait(7);
                         return;
@@ -288,7 +290,7 @@ namespace z80
                         // LD (DE), A
                         mem[De] = registers[A];
 #if (DEBUG)
-                        Log("LD (DE), A");
+                        _logger.Log("LD (DE), A");
 #endif
                         Wait(7);
                         return;
@@ -299,7 +301,7 @@ namespace z80
                         var addr = Fetch16();
                         mem[addr] = registers[A];
 #if (DEBUG)
-                        Log($"LD (0x{addr:X4}), A");
+                        _logger.Log($"LD (0x{addr:X4}), A");
 #endif
                         Wait(13);
                         return;
@@ -311,7 +313,7 @@ namespace z80
                         registers[L] = mem[addr++];
                         registers[H] = mem[addr];
 #if (DEBUG)
-                        Log($"LD HL, (0x{--addr:X4})");
+                        _logger.Log($"LD HL, (0x{--addr:X4})");
 #endif
                         Wait(16);
                         return;
@@ -323,7 +325,7 @@ namespace z80
                         mem[addr++] = registers[L];
                         mem[addr] = registers[H];
 #if (DEBUG)
-                        Log($"LD (0x{--addr:X4}), HL");
+                        _logger.Log($"LD (0x{--addr:X4}), HL");
 #endif
                         Wait(16);
                         return;
@@ -334,7 +336,7 @@ namespace z80
                         registers[SP + 1] = registers[L];
                         registers[SP] = registers[H];
 #if (DEBUG)
-                        Log("LD SP, HL");
+                        _logger.Log("LD SP, HL");
 #endif
                         Wait(6);
                         return;
@@ -349,7 +351,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("PUSH BC");
+                        _logger.Log("PUSH BC");
 #endif
                         Wait(11);
                         return;
@@ -363,7 +365,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("PUSH DE");
+                        _logger.Log("PUSH DE");
 #endif
                         Wait(11);
                         return;
@@ -377,7 +379,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("PUSH HL");
+                        _logger.Log("PUSH HL");
 #endif
                         Wait(11);
                         return;
@@ -391,7 +393,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("PUSH AF");
+                        _logger.Log("PUSH AF");
 #endif
                         Wait(11);
                         return;
@@ -405,7 +407,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("POP BC");
+                        _logger.Log("POP BC");
 #endif
                         Wait(10);
                         return;
@@ -419,7 +421,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("POP DE");
+                        _logger.Log("POP DE");
 #endif
                         Wait(10);
                         return;
@@ -433,7 +435,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("POP HL");
+                        _logger.Log("POP HL");
 #endif
                         Wait(10);
                         return;
@@ -447,7 +449,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("POP AF");
+                        _logger.Log("POP AF");
 #endif
                         Wait(10);
                         return;
@@ -458,7 +460,7 @@ namespace z80
                         SwapReg8(D, H);
                         SwapReg8(E, L);
 #if (DEBUG)
-                        Log("EX DE, HL");
+                        _logger.Log("EX DE, HL");
 #endif
                         Wait(4);
                         return;
@@ -469,7 +471,7 @@ namespace z80
                         SwapReg8(Ap, A);
                         SwapReg8(Fp, F);
 #if (DEBUG)
-                        Log("EX AF, AF'");
+                        _logger.Log("EX AF, AF'");
 #endif
                         Wait(4);
                         return;
@@ -484,7 +486,7 @@ namespace z80
                         SwapReg8(H, Hp);
                         SwapReg8(L, Lp);
 #if (DEBUG)
-                        Log("EXX");
+                        _logger.Log("EXX");
 #endif
                         Wait(4);
                         return;
@@ -503,7 +505,7 @@ namespace z80
                         mem[addr] = tmp;
 
 #if (DEBUG)
-                        Log("EX (SP), HL");
+                        _logger.Log("EX (SP), HL");
 #endif
                         Wait(19);
                         return;
@@ -519,7 +521,7 @@ namespace z80
                         // ADD A, r
                         Add(registers[lo]);
 #if (DEBUG)
-                        Log($"ADD A, {RName(lo)}");
+                        _logger.Log($"ADD A, {_logger.RName(lo)}");
 #endif
                         Wait(4);
                         return;
@@ -530,7 +532,7 @@ namespace z80
                         var b = Fetch();
                         Add(b);
 #if (DEBUG)
-                        Log($"ADD A, 0x{b:X2}");
+                        _logger.Log($"ADD A, 0x{b:X2}");
 #endif
                         Wait(4);
                         Wait(4);
@@ -541,7 +543,7 @@ namespace z80
                         // ADD A, (HL)
                         Add(mem[Hl]);
 #if (DEBUG)
-                        Log("ADD A, (HL)");
+                        _logger.Log("ADD A, (HL)");
 #endif
                         Wait(7);
                         return;
@@ -557,7 +559,7 @@ namespace z80
                         // ADC A, r
                         Adc(registers[lo]);
 #if (DEBUG)
-                        Log($"ADC A, {RName(lo)}");
+                        _logger.Log($"ADC A, {_logger.RName(lo)}");
 #endif
                         Wait(4);
                         return;
@@ -568,7 +570,7 @@ namespace z80
                         var b = Fetch();
                         Adc(b);
 #if (DEBUG)
-                        Log($"ADC A, 0x{b:X2}");
+                        _logger.Log($"ADC A, 0x{b:X2}");
 #endif
                         Wait(4);
                         return;
@@ -578,7 +580,7 @@ namespace z80
                         // ADC A, (HL)
                         Adc(mem[Hl]);
 #if (DEBUG)
-                        Log("ADC A, (HL)");
+                        _logger.Log("ADC A, (HL)");
 #endif
                         Wait(7);
                         return;
@@ -594,7 +596,7 @@ namespace z80
                         // SUB A, r
                         Sub(registers[lo]);
 #if (DEBUG)
-                        Log($"SUB A, {RName(lo)}");
+                        _logger.Log($"SUB A, {_logger.RName(lo)}");
 #endif
                         Wait(4);
                         return;
@@ -605,7 +607,7 @@ namespace z80
                         var b = Fetch();
                         Sub(b);
 #if (DEBUG)
-                        Log($"SUB A, 0x{b:X2}");
+                        _logger.Log($"SUB A, 0x{b:X2}");
 #endif
                         Wait(4);
                         return;
@@ -615,7 +617,7 @@ namespace z80
                         // SUB A, (HL)
                         Sub(mem[Hl]);
 #if (DEBUG)
-                        Log("SUB A, (HL)");
+                        _logger.Log("SUB A, (HL)");
 #endif
                         Wait(7);
                         return;
@@ -631,7 +633,7 @@ namespace z80
                         // SBC A, r
                         Sbc(registers[lo]);
 #if (DEBUG)
-                        Log($"SBC A, {RName(lo)}");
+                        _logger.Log($"SBC A, {_logger.RName(lo)}");
 #endif
                         Wait(4);
                         return;
@@ -642,7 +644,7 @@ namespace z80
                         var b = Fetch();
                         Sbc(b);
 #if (DEBUG)
-                        Log($"SBC A, 0x{b:X2}");
+                        _logger.Log($"SBC A, 0x{b:X2}");
 #endif
                         Wait(4);
                         return;
@@ -652,7 +654,7 @@ namespace z80
                         // SBC A, (HL)
                         Sbc(mem[Hl]);
 #if (DEBUG)
-                        Log("SBC A, (HL)");
+                        _logger.Log("SBC A, (HL)");
 #endif
                         Wait(7);
                         return;
@@ -669,7 +671,7 @@ namespace z80
                         // AND A, r
                         And(registers[lo]);
 #if (DEBUG)
-                        Log($"AND A, {RName(lo)}");
+                        _logger.Log($"AND A, {_logger.RName(lo)}");
 #endif
                         Wait(4);
                         return;
@@ -681,7 +683,7 @@ namespace z80
 
                         And(b);
 #if (DEBUG)
-                        Log($"AND A, 0x{b:X2}");
+                        _logger.Log($"AND A, 0x{b:X2}");
 #endif
                         Wait(4);
                         return;
@@ -691,7 +693,7 @@ namespace z80
                         // AND A, (HL)
                         And(mem[Hl]);
 #if (DEBUG)
-                        Log("AND A, (HL)");
+                        _logger.Log("AND A, (HL)");
 #endif
                         Wait(7);
                         return;
@@ -707,7 +709,7 @@ namespace z80
                         // OR A, r
                         Or(registers[lo]);
 #if (DEBUG)
-                        Log($"OR A, {RName(lo)}");
+                        _logger.Log($"OR A, {_logger.RName(lo)}");
 #endif
                         Wait(4);
                         return;
@@ -718,7 +720,7 @@ namespace z80
                         var b = Fetch();
                         Or(b);
 #if (DEBUG)
-                        Log($"OR A, 0x{b:X2}");
+                        _logger.Log($"OR A, 0x{b:X2}");
 #endif
                         Wait(4);
                         return;
@@ -728,7 +730,7 @@ namespace z80
                         // OR A, (HL)
                         Or(mem[Hl]);
 #if (DEBUG)
-                        Log("OR A, (HL)");
+                        _logger.Log("OR A, (HL)");
 #endif
                         Wait(7);
                         return;
@@ -744,7 +746,7 @@ namespace z80
                         // XOR A, r
                         Xor(registers[lo]);
 #if (DEBUG)
-                        Log($"XOR A, {RName(lo)}");
+                        _logger.Log($"XOR A, {_logger.RName(lo)}");
 #endif
                         Wait(4);
                         return;
@@ -755,7 +757,7 @@ namespace z80
                         var b = Fetch();
                         Xor(b);
 #if (DEBUG)
-                        Log($"XOR A, 0x{b:X2}");
+                        _logger.Log($"XOR A, 0x{b:X2}");
 #endif
                         Wait(4);
                         return;
@@ -765,7 +767,7 @@ namespace z80
                         // XOR A, (HL)
                         Xor(mem[Hl]);
 #if (DEBUG)
-                        Log("XOR A, (HL)");
+                        _logger.Log("XOR A, (HL)");
 #endif
                         Wait(7);
                         return;
@@ -777,7 +779,7 @@ namespace z80
                         IFF1 = false;
                         IFF2 = false;
 #if (DEBUG)
-                        Log("DI");
+                        _logger.Log("DI");
 #endif
                         Wait(4);
                         return;
@@ -788,7 +790,7 @@ namespace z80
                         IFF1 = true;
                         IFF2 = true;
 #if (DEBUG)
-                        Log("EI");
+                        _logger.Log("EI");
 #endif
                         Wait(4);
                         return;
@@ -804,7 +806,7 @@ namespace z80
                         // CP A, r
                         Cmp(registers[lo]);
 #if (DEBUG)
-                        Log($"CP A, {RName(lo)}");
+                        _logger.Log($"CP A, {_logger.RName(lo)}");
 #endif
                         Wait(4);
                         return;
@@ -815,7 +817,7 @@ namespace z80
                         var b = Fetch();
                         Cmp(b);
 #if (DEBUG)
-                        Log($"CP A, 0x{b:X2}");
+                        _logger.Log($"CP A, 0x{b:X2}");
 #endif
                         Wait(4);
                         return;
@@ -825,7 +827,7 @@ namespace z80
                         // CP A, (HL)
                         Cmp(mem[Hl]);
 #if (DEBUG)
-                        Log("CP A, (HL)");
+                        _logger.Log("CP A, (HL)");
 #endif
                         Wait(7);
                         return;
@@ -841,7 +843,7 @@ namespace z80
                         // INC r
                         registers[r] = Inc(registers[r]);
 #if (DEBUG)
-                        Log($"INC {RName(r)}");
+                        _logger.Log($"INC {_logger.RName(r)}");
 #endif
                         Wait(4);
                         return;
@@ -851,7 +853,7 @@ namespace z80
                         // INC (HL)
                         mem[Hl] = Inc(mem[Hl]);
 #if (DEBUG)
-                        Log("INC (HL)");
+                        _logger.Log("INC (HL)");
 #endif
                         Wait(7);
                         return;
@@ -868,7 +870,7 @@ namespace z80
                         // DEC r
                         registers[r] = Dec(registers[r]);
 #if (DEBUG)
-                        Log($"DEC {RName(r)}");
+                        _logger.Log($"DEC {_logger.RName(r)}");
 #endif
                         Wait(7);
                         return;
@@ -878,7 +880,7 @@ namespace z80
                         // DEC (HL)
                         mem[Hl] = Dec(mem[Hl]);
 #if (DEBUG)
-                        Log("DEC (HL)");
+                        _logger.Log("DEC (HL)");
 #endif
                         Wait(7);
                         return;
@@ -898,7 +900,7 @@ namespace z80
                             Add(0x60);
                         }
 #if (DEBUG)
-                        Log("DAA");
+                        _logger.Log("DAA");
 #endif
                         Wait(4);
                         return;
@@ -909,7 +911,7 @@ namespace z80
                         registers[A] ^= 0xFF;
                         registers[F] |= (byte)(Fl.H | Fl.N);
 #if (DEBUG)
-                        Log("CPL");
+                        _logger.Log("CPL");
 #endif
                         Wait(4);
                         return;
@@ -920,7 +922,7 @@ namespace z80
                         registers[F] &= (byte)~(Fl.N);
                         registers[F] ^= (byte)(Fl.C);
 #if (DEBUG)
-                        Log("CCF");
+                        _logger.Log("CCF");
 #endif
                         Wait(4);
                         return;
@@ -931,7 +933,7 @@ namespace z80
                         registers[F] &= (byte)~(Fl.N);
                         registers[F] |= (byte)(Fl.C);
 #if (DEBUG)
-                        Log("SCF");
+                        _logger.Log("SCF");
 #endif
                         Wait(4);
                         return;
@@ -941,7 +943,7 @@ namespace z80
                         AddHl(Bc);
 
 #if (DEBUG)
-                        Log("ADD HL, BC");
+                        _logger.Log("ADD HL, BC");
 #endif
                         Wait(4);
                         return;
@@ -950,7 +952,7 @@ namespace z80
                     {
                         AddHl(De);
 #if (DEBUG)
-                        Log("ADD HL, DE");
+                        _logger.Log("ADD HL, DE");
 #endif
                         Wait(4);
                         return;
@@ -959,7 +961,7 @@ namespace z80
                     {
                         AddHl(Hl);
 #if (DEBUG)
-                        Log("ADD HL, HL");
+                        _logger.Log("ADD HL, HL");
 #endif
                         Wait(4);
                         return;
@@ -968,7 +970,7 @@ namespace z80
                     {
                         AddHl(Sp);
 #if (DEBUG)
-                        Log("ADD HL, SP");
+                        _logger.Log("ADD HL, SP");
 #endif
                         Wait(4);
                         return;
@@ -979,7 +981,7 @@ namespace z80
                         registers[B] = (byte)(val >> 8);
                         registers[C] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("INC BC");
+                        _logger.Log("INC BC");
 #endif
                         Wait(4);
                         return;
@@ -990,7 +992,7 @@ namespace z80
                         registers[D] = (byte)(val >> 8);
                         registers[E] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("INC DE");
+                        _logger.Log("INC DE");
 #endif
                         Wait(4);
                         return;
@@ -1001,7 +1003,7 @@ namespace z80
                         registers[H] = (byte)(val >> 8);
                         registers[L] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("INC HL");
+                        _logger.Log("INC HL");
 #endif
                         Wait(4);
                         return;
@@ -1012,7 +1014,7 @@ namespace z80
                         registers[SP] = (byte)(val >> 8);
                         registers[SP + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("INC SP");
+                        _logger.Log("INC SP");
 #endif
                         Wait(4);
                         return;
@@ -1023,7 +1025,7 @@ namespace z80
                         registers[B] = (byte)(val >> 8);
                         registers[C] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("DEC BC");
+                        _logger.Log("DEC BC");
 #endif
                         Wait(4);
                         return;
@@ -1034,7 +1036,7 @@ namespace z80
                         registers[D] = (byte)(val >> 8);
                         registers[E] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("DEC DE");
+                        _logger.Log("DEC DE");
 #endif
                         Wait(4);
                         return;
@@ -1045,7 +1047,7 @@ namespace z80
                         registers[H] = (byte)(val >> 8);
                         registers[L] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("DEC HL");
+                        _logger.Log("DEC HL");
 #endif
                         Wait(4);
                         return;
@@ -1056,7 +1058,7 @@ namespace z80
                         registers[SP] = (byte)(val >> 8);
                         registers[SP + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("DEC SP");
+                        _logger.Log("DEC SP");
 #endif
                         Wait(4);
                         return;
@@ -1070,7 +1072,7 @@ namespace z80
                         registers[F] &= (byte)~(Fl.H | Fl.N | Fl.C);
                         registers[F] |= c;
 #if (DEBUG)
-                        Log("RLCA");
+                        _logger.Log("RLCA");
 #endif
                         Wait(4);
                         return;
@@ -1087,7 +1089,7 @@ namespace z80
                         f |= c;
                         registers[F] = f;
 #if (DEBUG)
-                        Log("RLA");
+                        _logger.Log("RLA");
 #endif
                         Wait(4);
                         return;
@@ -1101,7 +1103,7 @@ namespace z80
                         registers[F] &= (byte)~(Fl.H | Fl.N | Fl.C);
                         registers[F] |= c;
 #if (DEBUG)
-                        Log("RRCA");
+                        _logger.Log("RRCA");
 #endif
                         Wait(4);
                         return;
@@ -1118,7 +1120,7 @@ namespace z80
                         f |= c;
                         registers[F] = f;
 #if (DEBUG)
-                        Log("RRA");
+                        _logger.Log("RRA");
 #endif
                         Wait(4);
                         return;
@@ -1129,7 +1131,7 @@ namespace z80
                         registers[PC] = (byte)(addr >> 8);
                         registers[PC + 1] = (byte)(addr);
 #if (DEBUG)
-                        Log($"JP 0x{addr:X4}");
+                        _logger.Log($"JP 0x{addr:X4}");
 #endif
                         Wait(10);
                         return;
@@ -1150,7 +1152,7 @@ namespace z80
                             registers[PC + 1] = (byte)(addr);
                         }
 #if (DEBUG)
-                        Log($"JP {JCName(r)}, 0x{addr:X4}");
+                        _logger.Log($"JP {JCName(r)}, 0x{addr:X4}");
 #endif
                         Wait(10);
                         return;
@@ -1164,7 +1166,7 @@ namespace z80
                         registers[PC] = (byte)(addr >> 8);
                         registers[PC + 1] = (byte)(addr);
 #if (DEBUG)
-                        Log($"JR 0x{addr:X4}");
+                        _logger.Log($"JR 0x{addr:X4}");
 #endif
                         Wait(12);
                         return;
@@ -1188,7 +1190,7 @@ namespace z80
                             Wait(7);
                         }
 #if (DEBUG)
-                        Log($"JR {JCName((byte)(r & 3))}, 0x{addr:X4}");
+                        _logger.Log($"JR {JCName((byte)(r & 3))}, 0x{addr:X4}");
 #endif
                         return;
 
@@ -1199,7 +1201,7 @@ namespace z80
                         registers[PC] = (byte)(addr >> 8);
                         registers[PC + 1] = (byte)(addr);
 #if (DEBUG)
-                        Log("JP HL");
+                        _logger.Log("JP HL");
 #endif
                         Wait(4);
                         return;
@@ -1222,7 +1224,7 @@ namespace z80
                             Wait(8);
                         }
 #if (DEBUG)
-                        Log($"DJNZ 0x{addr:X4}");
+                        _logger.Log($"DJNZ 0x{addr:X4}");
 #endif
                         return;
                     }
@@ -1237,7 +1239,7 @@ namespace z80
                         registers[PC] = (byte)(addr >> 8);
                         registers[PC + 1] = (byte)(addr);
 #if (DEBUG)
-                        Log($"CALL 0x{addr:X4}");
+                        _logger.Log($"CALL 0x{addr:X4}");
 #endif
                         Wait(17);
                         return;
@@ -1268,7 +1270,7 @@ namespace z80
                             Wait(10);
                         }
 #if (DEBUG)
-                        Log($"CALL {JCName(r)}, 0x{addr:X4}");
+                        _logger.Log($"CALL {JCName(r)}, 0x{addr:X4}");
 #endif
                         return;
 
@@ -1281,7 +1283,7 @@ namespace z80
                         registers[SP] = (byte)(stack >> 8);
                         registers[SP + 1] = (byte)(stack);
 #if (DEBUG)
-                        Log("RET");
+                        _logger.Log("RET");
 #endif
                         Wait(10);
                         return;
@@ -1309,7 +1311,7 @@ namespace z80
                             Wait(5);
                         }
 #if (DEBUG)
-                        Log($"RET {JCName(r)}");
+                        _logger.Log($"RET {JCName(r)}");
 #endif
                         return;
 
@@ -1331,7 +1333,7 @@ namespace z80
                         registers[PC] = 0;
                         registers[PC + 1] = (byte)(mc & 0x38);
 #if (DEBUG)
-                        Log($"RST 0x{mc & 0x38:X4}");
+                        _logger.Log($"RST 0x{mc & 0x38:X4}");
 #endif
                         Wait(17);
                         return;
@@ -1341,7 +1343,7 @@ namespace z80
                         var port = Fetch() + (registers[A] << 8);
                         registers[A] = ports.ReadPort((ushort)port);
 #if (DEBUG)
-                        Log($"IN A, (0x{port:X2})");
+                        _logger.Log($"IN A, (0x{port:X2})");
 #endif
                         Wait(11);
                         return;
@@ -1351,7 +1353,7 @@ namespace z80
                         var port = Fetch() + (registers[A] << 8);
                         ports.WritePort((ushort)port, registers[A]);
 #if (DEBUG)
-                        Log($"OUT (0x{port:X2}), A");
+                        _logger.Log($"OUT (0x{port:X2}), A");
 #endif
                         Wait(11);
                         return;
@@ -1359,7 +1361,7 @@ namespace z80
             }
 
 #if(DEBUG)
-            Log($"{mc:X2}: {hi:X} {r:X} {lo:X}");
+            _logger.Log($"{mc:X2}: {hi:X} {r:X} {lo:X}");
             //throw new InvalidOperationException("Invalid Opcode: "+mc.ToString("X2"));
 #endif
             Halt = true;
@@ -1411,7 +1413,7 @@ namespace z80
                 if (useIX) debug_target = $"(IX{d:+0;-#})";
                 else debug_target = useIY ? $"(IY{d:+0;-#})" : "(HL)";
             else
-                debug_target = useIX ? $"(IX{d:+0;-#}), {RName(lo)}" : useIY ? $"(IY{d:+0;-#}), {RName(lo)}" : RName(lo);
+                debug_target = useIX ? $"(IX{d:+0;-#}), {_logger.RName(lo)}" : useIY ? $"(IY{d:+0;-#}), {_logger.RName(lo)}" : _logger.RName(lo);
 #endif
             switch (hi)
             {
@@ -1434,7 +1436,7 @@ namespace z80
                             {
                                 reg |= c;
 #if (DEBUG)
-                                Log($"RLC {debug_target}");
+                                _logger.Log($"RLC {debug_target}");
 #endif
                                 break;
                             }
@@ -1442,7 +1444,7 @@ namespace z80
                             {
                                 reg |= (byte)(c << 7);
 #if (DEBUG)
-                                Log($"RRC {debug_target}");
+                                _logger.Log($"RRC {debug_target}");
 #endif
                                 break;
                             }
@@ -1450,7 +1452,7 @@ namespace z80
                             {
                                 reg |= (byte)(f & (byte)Fl.C);
 #if (DEBUG)
-                                Log($"RL {debug_target}");
+                                _logger.Log($"RL {debug_target}");
 #endif
                                 break;
                             }
@@ -1458,14 +1460,14 @@ namespace z80
                             {
                                 reg |= (byte)((f & (byte)Fl.C) << 7);
 #if (DEBUG)
-                                Log($"RR {debug_target}");
+                                _logger.Log($"RR {debug_target}");
 #endif
                                 break;
                             }
                         case 4:
                             {
 #if (DEBUG)
-                                Log($"SLA {debug_target}");
+                                _logger.Log($"SLA {debug_target}");
 #endif
                                 break;
                             }
@@ -1473,7 +1475,7 @@ namespace z80
                             {
                                 reg |= (byte)((reg & 0x40) << 1);
 #if (DEBUG)
-                                Log($"SRA {debug_target}");
+                                _logger.Log($"SRA {debug_target}");
 
 #endif
                                 break;
@@ -1482,14 +1484,14 @@ namespace z80
                             {
                                 reg |= 1;
 #if (DEBUG)
-                                Log($"SLL {debug_target}");
+                                _logger.Log($"SLL {debug_target}");
 #endif
                                 break;
                             }
                         case 7:
                             {
 #if (DEBUG)
-                                Log($"SRL {debug_target}");
+                                _logger.Log($"SRL {debug_target}");
 #endif
                                 break;
                             }
@@ -1506,7 +1508,7 @@ namespace z80
                     {
                         Bit(r, reg);
 #if (DEBUG)
-                        Log($"BIT {r}, {debug_target}");
+                        _logger.Log($"BIT {r}, {debug_target}");
 #endif
                         Wait(useHL ? 12 : 8);
                         return;
@@ -1514,14 +1516,14 @@ namespace z80
                 case 2:
                     reg &= (byte)~(0x01 << r);
 #if (DEBUG)
-                    Log($"RES {r}, {debug_target}");
+                    _logger.Log($"RES {r}, {debug_target}");
 #endif
                     Wait(useHL ? 12 : 8);
                     break;
                 case 3:
                     reg |= (byte)(0x01 << r);
 #if (DEBUG)
-                    Log($"SET {r}, {debug_target}");
+                    _logger.Log($"SET {r}, {debug_target}");
 #endif
                     Wait(useHL ? 12 : 8);
                     break;
@@ -1666,7 +1668,7 @@ namespace z80
                         // LD I, A
                         registers[I] = registers[A];
 #if (DEBUG)
-                        Log("LD I, A");
+                        _logger.Log("LD I, A");
 #endif
                         Wait(9);
                         return;
@@ -1676,7 +1678,7 @@ namespace z80
                         // LD R, A
                         registers[R] = registers[A];
 #if (DEBUG)
-                        Log("LD R, A");
+                        _logger.Log("LD R, A");
 #endif
                         Wait(9);
                         return;
@@ -1712,7 +1714,7 @@ namespace z80
                         }
                         registers[F] = f;
 #if (DEBUG)
-                        Log("LD A, I");
+                        _logger.Log("LD A, I");
 #endif
                         Wait(9);
                         return;
@@ -1748,7 +1750,7 @@ namespace z80
                         }
                         registers[F] = f;
 #if (DEBUG)
-                        Log("LD A, R");
+                        _logger.Log("LD A, R");
 #endif
                         Wait(9);
                         return;
@@ -1760,7 +1762,7 @@ namespace z80
                         registers[C] = mem[addr++];
                         registers[B] = mem[addr];
 #if (DEBUG)
-                        Log($"LD BC, (0x{--addr:X4})");
+                        _logger.Log($"LD BC, (0x{--addr:X4})");
 #endif
                         Wait(20);
                         return;
@@ -1772,7 +1774,7 @@ namespace z80
                         registers[E] = mem[addr++];
                         registers[D] = mem[addr];
 #if (DEBUG)
-                        Log($"LD DE, (0x{--addr:X4})");
+                        _logger.Log($"LD DE, (0x{--addr:X4})");
 #endif
                         Wait(20);
                         return;
@@ -1784,7 +1786,7 @@ namespace z80
                         registers[L] = mem[addr++];
                         registers[H] = mem[addr];
 #if (DEBUG)
-                        Log($"LD HL, (0x{--addr:X4})*");
+                        _logger.Log($"LD HL, (0x{--addr:X4})*");
 #endif
                         Wait(20);
                         return;
@@ -1796,7 +1798,7 @@ namespace z80
                         registers[SP + 1] = mem[addr++];
                         registers[SP] = mem[addr];
 #if (DEBUG)
-                        Log($"LD SP, (0x{--addr:X4})");
+                        _logger.Log($"LD SP, (0x{--addr:X4})");
 #endif
                         Wait(20);
                         return;
@@ -1808,7 +1810,7 @@ namespace z80
                         mem[addr++] = registers[C];
                         mem[addr] = registers[B];
 #if (DEBUG)
-                        Log($"LD (0x{--addr:X4}), BC");
+                        _logger.Log($"LD (0x{--addr:X4}), BC");
 #endif
                         Wait(20);
                         return;
@@ -1820,7 +1822,7 @@ namespace z80
                         mem[addr++] = registers[E];
                         mem[addr] = registers[D];
 #if (DEBUG)
-                        Log($"LD (0x{--addr:X4}), DE");
+                        _logger.Log($"LD (0x{--addr:X4}), DE");
 #endif
                         Wait(20);
                         return;
@@ -1832,7 +1834,7 @@ namespace z80
                         mem[addr++] = registers[L];
                         mem[addr] = registers[H];
 #if (DEBUG)
-                        Log($"LD (0x{--addr:X4}), HL");
+                        _logger.Log($"LD (0x{--addr:X4}), HL");
 #endif
                         Wait(20);
                         return;
@@ -1844,7 +1846,7 @@ namespace z80
                         mem[addr++] = registers[SP + 1];
                         mem[addr] = registers[SP];
 #if (DEBUG)
-                        Log($"LD (0x{--addr:X4}), SP");
+                        _logger.Log($"LD (0x{--addr:X4}), SP");
 #endif
                         Wait(20);
                         return;
@@ -1872,7 +1874,7 @@ namespace z80
                         if (bc != 0) f = (byte)(f | 0x04);
                         registers[F] = f;
 #if (DEBUG)
-                        Log("LDI");
+                        _logger.Log("LDI");
 #endif
                         Wait(16);
                         return;
@@ -1908,7 +1910,7 @@ namespace z80
                             return;
                         }
 #if (DEBUG)
-                        Log("LDIR");
+                        _logger.Log("LDIR");
 #endif
                         Wait(16);
                         return;
@@ -1936,7 +1938,7 @@ namespace z80
                         if (bc != 0) f = (byte)(f | 0x04);
                         registers[F] = f;
 #if (DEBUG)
-                        Log("LDD");
+                        _logger.Log("LDD");
 #endif
                         Wait(16);
                         return;
@@ -1972,7 +1974,7 @@ namespace z80
                             return;
                         }
 #if (DEBUG)
-                        Log("LDDR");
+                        _logger.Log("LDDR");
 #endif
                         Wait(16);
                         return;
@@ -2001,7 +2003,7 @@ namespace z80
                         if (bc != 0) f = (byte)(f | 0x04);
                         registers[F] = (byte)(f | 0x02);
 #if (DEBUG)
-                        Log("CPI");
+                        _logger.Log("CPI");
 #endif
                         Wait(16);
                         return;
@@ -2032,7 +2034,7 @@ namespace z80
                             if (bc != 0) f = (byte)(f | 0x04);
                             registers[F] = (byte)(f | 0x02);
 #if (DEBUG)
-                            Log("CPIR");
+                            _logger.Log("CPIR");
 #endif
                             Wait(16);
                             return;
@@ -2070,7 +2072,7 @@ namespace z80
                         if (bc != 0) f = (byte)(f | 0x04);
                         registers[F] = (byte)(f | 0x02);
 #if (DEBUG)
-                        Log("CPD");
+                        _logger.Log("CPD");
 #endif
                         Wait(16);
                         return;
@@ -2101,7 +2103,7 @@ namespace z80
                             if (bc != 0) f = (byte)(f | 0x04);
                             registers[F] = (byte)(f | 0x02);
 #if (DEBUG)
-                            Log("CPDR");
+                            _logger.Log("CPDR");
 #endif
                             Wait(21);
                             return;
@@ -2140,7 +2142,7 @@ namespace z80
 
 
 #if (DEBUG)
-                        Log("NEG");
+                        _logger.Log("NEG");
 #endif
                         Wait(8);
                         return;
@@ -2151,7 +2153,7 @@ namespace z80
                         // IM 0
                         interruptMode = 0;
 #if (DEBUG)
-                        Log("IM 0");
+                        _logger.Log("IM 0");
 #endif
                         Wait(8);
                         return;
@@ -2162,7 +2164,7 @@ namespace z80
                         // IM 1
                         interruptMode = 1;
 #if (DEBUG)
-                        Log("IM 1");
+                        _logger.Log("IM 1");
 #endif
                         Wait(8);
                         return;
@@ -2173,7 +2175,7 @@ namespace z80
                         // IM 2
                         interruptMode = 2;
 #if (DEBUG)
-                        Log("IM 2");
+                        _logger.Log("IM 2");
 #endif
                         Wait(8);
                         return;
@@ -2183,7 +2185,7 @@ namespace z80
                         AdcHl(Bc);
 
 #if (DEBUG)
-                        Log("ADC HL, BC");
+                        _logger.Log("ADC HL, BC");
 #endif
                         Wait(15);
                         return;
@@ -2192,7 +2194,7 @@ namespace z80
                     {
                         AdcHl(De);
 #if (DEBUG)
-                        Log("ADC HL, DE");
+                        _logger.Log("ADC HL, DE");
 #endif
                         Wait(15);
                         return;
@@ -2201,7 +2203,7 @@ namespace z80
                     {
                         AdcHl(Hl);
 #if (DEBUG)
-                        Log("ADC HL, HL");
+                        _logger.Log("ADC HL, HL");
 #endif
                         Wait(15);
                         return;
@@ -2210,7 +2212,7 @@ namespace z80
                     {
                         AdcHl(Sp);
 #if (DEBUG)
-                        Log("ADC HL, SP");
+                        _logger.Log("ADC HL, SP");
 #endif
                         Wait(15);
                         return;
@@ -2220,7 +2222,7 @@ namespace z80
                         SbcHl(Bc);
 
 #if (DEBUG)
-                        Log("SBC HL, BC");
+                        _logger.Log("SBC HL, BC");
 #endif
                         Wait(15);
                         return;
@@ -2229,7 +2231,7 @@ namespace z80
                     {
                         SbcHl(De);
 #if (DEBUG)
-                        Log("SBC HL, DE");
+                        _logger.Log("SBC HL, DE");
 #endif
                         Wait(15);
                         return;
@@ -2238,7 +2240,7 @@ namespace z80
                     {
                         SbcHl(Hl);
 #if (DEBUG)
-                        Log("SBC HL, HL");
+                        _logger.Log("SBC HL, HL");
 #endif
                         Wait(15);
                         return;
@@ -2247,7 +2249,7 @@ namespace z80
                     {
                         SbcHl(Sp);
 #if (DEBUG)
-                        Log("SBC HL, SP");
+                        _logger.Log("SBC HL, SP");
 #endif
                         Wait(15);
                         return;
@@ -2266,7 +2268,7 @@ namespace z80
                         if (Parity(a)) f |= (byte)Fl.PV;
                         registers[F] = f;
 #if (DEBUG)
-                        Log("RLD");
+                        _logger.Log("RLD");
 #endif
                         Wait(18);
                         return;
@@ -2284,7 +2286,7 @@ namespace z80
                         if (Parity(a)) f |= (byte)Fl.PV;
                         registers[F] = f;
 #if (DEBUG)
-                        Log("RRD");
+                        _logger.Log("RRD");
 #endif
                         Wait(18);
                         return;
@@ -2306,9 +2308,9 @@ namespace z80
                         IFF1 = IFF2;
 #if (DEBUG)
                         if (mc == 0x4D)
-                            Log("RETN");
+                            _logger.Log("RETN");
                         else
-                            Log("RETI");
+                            _logger.Log("RETI");
 #endif
                         Wait(10);
                         return;
@@ -2318,7 +2320,7 @@ namespace z80
                 case 0x7F:
                     {
 #if (DEBUG)
-                        Log("NOP");
+                        _logger.Log("NOP");
 #endif
                         Wait(8);
                         return;
@@ -2339,7 +2341,7 @@ namespace z80
                         if (Parity(a)) f |= (byte)Fl.PV;
                         registers[F] = f;
 #if (DEBUG)
-                        Log($"IN {RName(r)}, (BC)");
+                        _logger.Log($"IN {_logger.RName(r)}, (BC)");
 #endif
                         Wait(8);
                         return;
@@ -2359,7 +2361,7 @@ namespace z80
                         registers[F] = f;
 
 #if (DEBUG)
-                        Log("INI");
+                        _logger.Log("INI");
 #endif
                         Wait(16);
                         return;
@@ -2379,7 +2381,7 @@ namespace z80
                             registers[PC] = (byte)(pc >> 8);
                             registers[PC + 1] = (byte)pc;
 #if (DEBUG)
-                            Log("(INIR)");
+                            _logger.Log("(INIR)");
 #endif
                             Wait(21);
                         }
@@ -2387,7 +2389,7 @@ namespace z80
                         {
                             registers[F] = (byte)(registers[F] | (byte)(Fl.N | Fl.Z));
 #if (DEBUG)
-                            Log("INIR");
+                            _logger.Log("INIR");
 #endif
                             Wait(16);
                         }
@@ -2407,7 +2409,7 @@ namespace z80
                         f |= (byte)Fl.N;
                         registers[F] = f;
 #if (DEBUG)
-                        Log("IND");
+                        _logger.Log("IND");
 #endif
                         Wait(16);
                         return;
@@ -2427,7 +2429,7 @@ namespace z80
                             registers[PC] = (byte)(pc >> 8);
                             registers[PC + 1] = (byte)pc;
 #if (DEBUG)
-                            Log("(INDR)");
+                            _logger.Log("(INDR)");
 #endif
                             Wait(21);
                         }
@@ -2435,7 +2437,7 @@ namespace z80
                         {
                             registers[F] = (byte)(registers[F] | (byte)(Fl.N | Fl.Z));
 #if (DEBUG)
-                            Log("INDR");
+                            _logger.Log("INDR");
 #endif
                             Wait(16);
                         }
@@ -2457,7 +2459,7 @@ namespace z80
                         if (Parity(a)) f |= (byte)Fl.PV;
                         registers[F] = f;
 #if (DEBUG)
-                        Log($"OUT (BC), {RName(r)}");
+                        _logger.Log($"OUT (BC), {_logger.RName(r)}");
 #endif
                         Wait(8);
                         return;
@@ -2477,7 +2479,7 @@ namespace z80
                         registers[F] = f;
 
 #if (DEBUG)
-                        Log("OUTI");
+                        _logger.Log("OUTI");
 #endif
                         Wait(16);
                         return;
@@ -2497,7 +2499,7 @@ namespace z80
                             registers[PC] = (byte)(pc >> 8);
                             registers[PC + 1] = (byte)pc;
 #if (DEBUG)
-                            Log("(OUTIR)");
+                            _logger.Log("(OUTIR)");
 #endif
                             Wait(21);
                         }
@@ -2505,7 +2507,7 @@ namespace z80
                         {
                             registers[F] = (byte)(registers[F] | (byte)(Fl.N | Fl.Z));
 #if (DEBUG)
-                            Log("OUTIR");
+                            _logger.Log("OUTIR");
 #endif
                             Wait(16);
                         }
@@ -2525,7 +2527,7 @@ namespace z80
                         f |= (byte)Fl.N;
                         registers[F] = f;
 #if (DEBUG)
-                        Log("OUTD");
+                        _logger.Log("OUTD");
 #endif
                         Wait(16);
                         return;
@@ -2545,7 +2547,7 @@ namespace z80
                             registers[PC] = (byte)(pc >> 8);
                             registers[PC + 1] = (byte)pc;
 #if (DEBUG)
-                            Log("(OUTDR)");
+                            _logger.Log("(OUTDR)");
 #endif
                             Wait(21);
                         }
@@ -2553,7 +2555,7 @@ namespace z80
                         {
                             registers[F] = (byte)(registers[F] | (byte)(Fl.N | Fl.Z));
 #if (DEBUG)
-                            Log("OUTDR");
+                            _logger.Log("OUTDR");
 #endif
                             Wait(16);
                         }
@@ -2561,7 +2563,7 @@ namespace z80
                     }
             }
 #if (DEBUG)
-            Log($"ED {mc:X2}: {r:X2}");
+            _logger.Log($"ED {mc:X2}: {r:X2}");
 #endif
             Halt = true;
         }
@@ -2587,7 +2589,7 @@ namespace z80
                         registers[IX + 1] = Fetch();
                         registers[IX] = Fetch();
 #if (DEBUG)
-                        Log($"LD IX, 0x{Ix:X4}");
+                        _logger.Log($"LD IX, 0x{Ix:X4}");
 #endif
                         Wait(14);
                         return;
@@ -2604,7 +2606,7 @@ namespace z80
                         var d = (sbyte)Fetch();
                         registers[mid] = mem[(ushort)(Ix + d)];
 #if (DEBUG)
-                        Log($"LD {RName(mid)}, (IX{d:+0;-#})");
+                        _logger.Log($"LD {_logger.RName(mid)}, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2621,7 +2623,7 @@ namespace z80
                         var d = (sbyte)Fetch();
                         mem[(ushort)(Ix + d)] = registers[lo];
 #if (DEBUG)
-                        Log($"LD (IX{d:+0;-#}), {RName(lo)}");
+                        _logger.Log($"LD (IX{d:+0;-#}), {_logger.RName(lo)}");
 #endif
                         Wait(19);
                         return;
@@ -2633,7 +2635,7 @@ namespace z80
                         var n = Fetch();
                         mem[(ushort)(Ix + d)] = n;
 #if (DEBUG)
-                        Log($"LD (IX{d:+0;-#}), {n}");
+                        _logger.Log($"LD (IX{d:+0;-#}), {n}");
 #endif
                         Wait(19);
                         return;
@@ -2645,7 +2647,7 @@ namespace z80
                         registers[IX + 1] = mem[addr++];
                         registers[IX] = mem[addr];
 #if (DEBUG)
-                        Log($"LD IX, (0x{addr:X4})*");
+                        _logger.Log($"LD IX, (0x{addr:X4})*");
 #endif
                         Wait(20);
                         return;
@@ -2657,7 +2659,7 @@ namespace z80
                         mem[addr++] = registers[IX + 1];
                         mem[addr] = registers[IX];
 #if (DEBUG)
-                        Log($"LD (0x{addr:X4}), IX");
+                        _logger.Log($"LD (0x{addr:X4}), IX");
 #endif
                         Wait(20);
                         return;
@@ -2669,7 +2671,7 @@ namespace z80
                         registers[SP] = registers[IX];
                         registers[SP + 1] = registers[IX + 1];
 #if (DEBUG)
-                        Log("LD SP, IX");
+                        _logger.Log("LD SP, IX");
 #endif
                         Wait(10);
                         return;
@@ -2685,7 +2687,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("PUSH IX");
+                        _logger.Log("PUSH IX");
 #endif
                         Wait(15);
                         return;
@@ -2699,7 +2701,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("POP IX");
+                        _logger.Log("POP IX");
 #endif
                         Wait(14);
                         return;
@@ -2716,7 +2718,7 @@ namespace z80
                         mem[addr] = l;
 
 #if (DEBUG)
-                        Log("EX (SP), IX");
+                        _logger.Log("EX (SP), IX");
 #endif
                         Wait(24);
                         return;
@@ -2729,7 +2731,7 @@ namespace z80
 
                         Add(mem[(ushort)(Ix + d)]);
 #if (DEBUG)
-                        Log($"ADD A, (IX{d:+0;-#})");
+                        _logger.Log($"ADD A, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2741,7 +2743,7 @@ namespace z80
                         var a = registers[A];
                         Adc(mem[(ushort)(Ix + d)]);
 #if (DEBUG)
-                        Log($"ADC A, (IX{d:+0;-#})");
+                        _logger.Log($"ADC A, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2754,7 +2756,7 @@ namespace z80
 
                         Sub(b);
 #if (DEBUG)
-                        Log($"SUB A, (IX{d:+0;-#})");
+                        _logger.Log($"SUB A, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2766,7 +2768,7 @@ namespace z80
 
                         Sbc(mem[(ushort)(Ix + d)]);
 #if (DEBUG)
-                        Log($"SBC A, (IX{d:+0;-#})");
+                        _logger.Log($"SBC A, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2779,7 +2781,7 @@ namespace z80
 
                         And(b);
 #if (DEBUG)
-                        Log($"AND A, (IX{d:+0;-#})");
+                        _logger.Log($"AND A, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2792,7 +2794,7 @@ namespace z80
 
                         Or(b);
 #if (DEBUG)
-                        Log($"OR A, (IX{d:+0;-#})");
+                        _logger.Log($"OR A, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2805,7 +2807,7 @@ namespace z80
 
                         Xor(b);
 #if (DEBUG)
-                        Log($"XOR A, (IX{d:+0;-#})");
+                        _logger.Log($"XOR A, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2818,7 +2820,7 @@ namespace z80
 
                         Cmp(b);
 #if (DEBUG)
-                        Log($"CP A, (IX{d:+0;-#})");
+                        _logger.Log($"CP A, (IX{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2829,7 +2831,7 @@ namespace z80
                         var d = (sbyte)Fetch();
                         mem[(ushort)(Ix + d)] = Inc(mem[(ushort)(Ix + d)]);
 #if (DEBUG)
-                        Log($"INC (IX{d:+0;-#})");
+                        _logger.Log($"INC (IX{d:+0;-#})");
 #endif
                         Wait(7);
                         return;
@@ -2840,7 +2842,7 @@ namespace z80
                         var d = (sbyte)Fetch();
                         mem[(ushort)(Ix + d)] = Dec(mem[(ushort)(Ix + d)]);
 #if (DEBUG)
-                        Log($"DEC (IX{d:+0;-#})");
+                        _logger.Log($"DEC (IX{d:+0;-#})");
 #endif
                         Wait(7);
                         return;
@@ -2849,7 +2851,7 @@ namespace z80
                     {
                         AddIx(Bc);
 #if (DEBUG)
-                        Log("ADD IX, BC");
+                        _logger.Log("ADD IX, BC");
 #endif
                         Wait(4);
                         return;
@@ -2858,7 +2860,7 @@ namespace z80
                     {
                         AddIx(De);
 #if (DEBUG)
-                        Log("ADD IX, DE");
+                        _logger.Log("ADD IX, DE");
 #endif
                         Wait(4);
                         return;
@@ -2867,7 +2869,7 @@ namespace z80
                     {
                         AddIx(Ix);
 #if (DEBUG)
-                        Log("ADD IX, IX");
+                        _logger.Log("ADD IX, IX");
 #endif
                         Wait(4);
                         return;
@@ -2876,7 +2878,7 @@ namespace z80
                     {
                         AddIx(Sp);
 #if (DEBUG)
-                        Log("ADD IX, SP");
+                        _logger.Log("ADD IX, SP");
 #endif
                         Wait(4);
                         return;
@@ -2887,7 +2889,7 @@ namespace z80
                         registers[IX] = (byte)(val >> 8);
                         registers[IX + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("INC IX");
+                        _logger.Log("INC IX");
 #endif
                         Wait(4);
                         return;
@@ -2898,7 +2900,7 @@ namespace z80
                         registers[IX] = (byte)(val >> 8);
                         registers[IX + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("DEC IX");
+                        _logger.Log("DEC IX");
 #endif
                         Wait(4);
                         return;
@@ -2909,7 +2911,7 @@ namespace z80
                         registers[PC] = (byte)(addr >> 8);
                         registers[PC + 1] = (byte)(addr);
 #if (DEBUG)
-                        Log("JP IX");
+                        _logger.Log("JP IX");
 #endif
                         Wait(8);
                         return;
@@ -2917,7 +2919,7 @@ namespace z80
 
             }
 #if (DEBUG)
-            Log($"DD {mc:X2}: {hi:X} {mid:X} {lo:X}");
+            _logger.Log($"DD {mc:X2}: {hi:X} {mid:X} {lo:X}");
 #endif
             Halt = true;
         }
@@ -2943,7 +2945,7 @@ namespace z80
                         registers[IY + 1] = Fetch();
                         registers[IY] = Fetch();
 #if (DEBUG)
-                        Log($"LD IY, 0x{Iy:X4}");
+                        _logger.Log($"LD IY, 0x{Iy:X4}");
 #endif
                         Wait(14);
                         return;
@@ -2961,7 +2963,7 @@ namespace z80
                         var d = (sbyte)Fetch();
                         registers[r] = mem[(ushort)(Iy + d)];
 #if (DEBUG)
-                        Log($"LD {RName(r)}, (IY{d:+0;-#})");
+                        _logger.Log($"LD {_logger.RName(r)}, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -2978,7 +2980,7 @@ namespace z80
                         var d = (sbyte)Fetch();
                         mem[(ushort)(Iy + d)] = registers[lo];
 #if (DEBUG)
-                        Log($"LD (IY{d:+0;-#}), {RName(lo)}");
+                        _logger.Log($"LD (IY{d:+0;-#}), {_logger.RName(lo)}");
 #endif
                         Wait(19);
                         return;
@@ -2990,7 +2992,7 @@ namespace z80
                         var n = Fetch();
                         mem[(ushort)(Iy + d)] = n;
 #if (DEBUG)
-                        Log($"LD (IY{d:+0;-#}), {n}");
+                        _logger.Log($"LD (IY{d:+0;-#}), {n}");
 #endif
                         Wait(19);
                         return;
@@ -3002,7 +3004,7 @@ namespace z80
                         registers[IY + 1] = mem[addr++];
                         registers[IY] = mem[addr];
 #if (DEBUG)
-                        Log($"LD IY, (0x{--addr:X4})*");
+                        _logger.Log($"LD IY, (0x{--addr:X4})*");
 #endif
                         Wait(20);
                         return;
@@ -3015,7 +3017,7 @@ namespace z80
                         mem[addr++] = registers[IY + 1];
                         mem[addr] = registers[IY];
 #if (DEBUG)
-                        Log($"LD (0x{--addr:X4}), IY");
+                        _logger.Log($"LD (0x{--addr:X4}), IY");
 #endif
                         Wait(20);
                         return;
@@ -3026,7 +3028,7 @@ namespace z80
                         registers[SP] = registers[IY];
                         registers[SP + 1] = registers[IY + 1];
 #if (DEBUG)
-                        Log("LD SP, IY");
+                        _logger.Log("LD SP, IY");
 #endif
                         Wait(10);
                         return;
@@ -3040,7 +3042,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("PUSH IY");
+                        _logger.Log("PUSH IY");
 #endif
                         Wait(15);
                         return;
@@ -3054,7 +3056,7 @@ namespace z80
                         registers[SP + 1] = (byte)(addr & 0xFF);
                         registers[SP] = (byte)(addr >> 8);
 #if (DEBUG)
-                        Log("POP IY");
+                        _logger.Log("POP IY");
 #endif
                         Wait(14);
                         return;
@@ -3071,7 +3073,7 @@ namespace z80
                         mem[addr] = h;
 
 #if (DEBUG)
-                        Log("EX (SP), IY");
+                        _logger.Log("EX (SP), IY");
 #endif
                         Wait(24);
                         return;
@@ -3083,7 +3085,7 @@ namespace z80
 
                         Add(mem[(ushort)(Iy + d)]);
 #if (DEBUG)
-                        Log($"ADD A, (IY{d:+0;-#})");
+                        _logger.Log($"ADD A, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -3096,7 +3098,7 @@ namespace z80
                         Adc(mem[(ushort)(Iy + d)]);
 
 #if (DEBUG)
-                        Log($"ADC A, (IY{d:+0;-#})");
+                        _logger.Log($"ADC A, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -3108,7 +3110,7 @@ namespace z80
 
                         Sub(mem[(ushort)(Iy + d)]);
 #if (DEBUG)
-                        Log($"SUB A, (IY{d:+0;-#})");
+                        _logger.Log($"SUB A, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -3120,7 +3122,7 @@ namespace z80
 
                         Sbc(mem[(ushort)(Iy + d)]);
 #if (DEBUG)
-                        Log($"SBC A, (IY{d:+0;-#})");
+                        _logger.Log($"SBC A, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -3133,7 +3135,7 @@ namespace z80
 
                         And(b);
 #if (DEBUG)
-                        Log($"AND A, (IY{d:+0;-#})");
+                        _logger.Log($"AND A, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -3146,7 +3148,7 @@ namespace z80
 
                         Or(b);
 #if (DEBUG)
-                        Log($"OR A, (IY{d:+0;-#})");
+                        _logger.Log($"OR A, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -3159,7 +3161,7 @@ namespace z80
 
                         Xor(b);
 #if (DEBUG)
-                        Log($"XOR A, (IY{d:+0;-#})");
+                        _logger.Log($"XOR A, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -3171,7 +3173,7 @@ namespace z80
 
                         Cmp(mem[(ushort)(Iy + d)]);
 #if (DEBUG)
-                        Log($"CP A, (IY{d:+0;-#})");
+                        _logger.Log($"CP A, (IY{d:+0;-#})");
 #endif
                         Wait(19);
                         return;
@@ -3182,7 +3184,7 @@ namespace z80
                         var d = (sbyte)Fetch();
                         mem[(ushort)(Iy + d)] = Inc(mem[(ushort)(Iy + d)]);
 #if (DEBUG)
-                        Log($"INC (IY{d:+0;-#})");
+                        _logger.Log($"INC (IY{d:+0;-#})");
 #endif
                         Wait(7);
                         return;
@@ -3193,7 +3195,7 @@ namespace z80
                         var d = (sbyte)Fetch();
                         mem[(ushort)(Iy + d)] = Dec(mem[(ushort)(Iy + d)]);
 #if (DEBUG)
-                        Log($"DEC (IY{d:+0;-#})");
+                        _logger.Log($"DEC (IY{d:+0;-#})");
 #endif
                         Wait(7);
                         return;
@@ -3202,7 +3204,7 @@ namespace z80
                     {
                         AddIy(Bc);
 #if (DEBUG)
-                        Log("ADD IY, BC");
+                        _logger.Log("ADD IY, BC");
 #endif
                         Wait(4);
                         return;
@@ -3211,7 +3213,7 @@ namespace z80
                     {
                         AddIy(De);
 #if (DEBUG)
-                        Log("ADD IY, DE");
+                        _logger.Log("ADD IY, DE");
 #endif
                         Wait(4);
                         return;
@@ -3220,7 +3222,7 @@ namespace z80
                     {
                         AddIy(Iy);
 #if (DEBUG)
-                        Log("ADD IY, IY");
+                        _logger.Log("ADD IY, IY");
 #endif
                         Wait(4);
                         return;
@@ -3229,7 +3231,7 @@ namespace z80
                     {
                         AddIy(Sp);
 #if (DEBUG)
-                        Log("ADD IY, SP");
+                        _logger.Log("ADD IY, SP");
 #endif
                         Wait(4);
                         return;
@@ -3240,7 +3242,7 @@ namespace z80
                         registers[IY] = (byte)(val >> 8);
                         registers[IY + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("INC IY");
+                        _logger.Log("INC IY");
 #endif
                         Wait(4);
                         return;
@@ -3251,7 +3253,7 @@ namespace z80
                         registers[IY] = (byte)(val >> 8);
                         registers[IY + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
-                        Log("DEC IY");
+                        _logger.Log("DEC IY");
 #endif
                         Wait(4);
                         return;
@@ -3262,7 +3264,7 @@ namespace z80
                         registers[PC] = (byte)(addr >> 8);
                         registers[PC + 1] = (byte)(addr);
 #if (DEBUG)
-                        Log("JP IY");
+                        _logger.Log("JP IY");
 #endif
                         Wait(8);
                         return;
@@ -3270,7 +3272,7 @@ namespace z80
 
             }
 #if (DEBUG)
-            Log($"FD {mc:X2}: {hi:X2} {lo:X2} {r:X2}");
+            _logger.Log($"FD {mc:X2}: {hi:X2} {lo:X2} {r:X2}");
 #endif
             Halt = true;
         }
@@ -3494,7 +3496,7 @@ namespace z80
             var pc = Pc;
             var ret = mem[pc];
 #if (DEBUG)
-            LogMemRead(pc, ret);
+            _logger.LogMemRead(pc, ret);
 #endif
             pc++;
             registers[PC] = (byte)(pc >> 8);
@@ -3563,7 +3565,7 @@ namespace z80
             else
             {
 #if (DEBUG)
-                Log($"Clock expected {((double)ticks) / realTicksPerTick:0.00} but was {((double)elapsed) / realTicksPerTick:0.00}");
+                _logger.Log($"Clock expected {((double)ticks) / realTicksPerTick:0.00} but was {((double)elapsed) / realTicksPerTick:0.00}");
 #endif
                 _clock = DateTime.UtcNow;
             }
@@ -3590,69 +3592,5 @@ namespace z80
             All = 0xD7
         }
 
-#if (DEBUG)
-        private static bool debug_atStart = true;
-
-        private static void LogMemRead(ushort addr, byte val)
-        {
-            if (debug_atStart)
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write($"{addr:X4} ");
-                debug_atStart = false;
-            }
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"{val:X2} ");
-            Console.ForegroundColor = ConsoleColor.White;
-        }
-
-        private static void Log(string text)
-        {
-            Console.CursorLeft = 20;
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(text);
-            Console.ForegroundColor = ConsoleColor.White;
-            debug_atStart = true;
-        }
-
-        private static string RName(byte n)
-        {
-            switch (n)
-            {
-                case 0:
-                    return "B";
-                case 1:
-                    return "C";
-                case 2:
-                    return "D";
-                case 3:
-                    return "E";
-                case 4:
-                    return "H";
-                case 5:
-                    return "L";
-                case 7:
-                    return "A";
-                default:
-                    return "";
-            }
-        }
-
-        private static string R16Name(byte n)
-        {
-            switch (n)
-            {
-                case 0x00:
-                    return "BC";
-                case 0x10:
-                    return "DE";
-                case 0x20:
-                    return "HL";
-                case 0x30:
-                    return "SP";
-            }
-            return "";
-        }
-#endif
     }
 }
