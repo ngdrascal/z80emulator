@@ -20,4 +20,10 @@
 	  <ProjectReference Include="..\z80\z80.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="48.rom">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 </Project>
