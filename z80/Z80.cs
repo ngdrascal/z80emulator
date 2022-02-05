@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 
 // ReSharper disable InconsistentNaming
@@ -2333,7 +2332,7 @@ namespace z80
                 case 0x68:
                 case 0x78:
                     {
-                        var a = (byte)ports.ReadPort(Bc);
+                        var a = ports.ReadPort(Bc);
                         registers[r] = a;
                         var f = (byte)(registers[F] & 0x29);
                         if ((a & 0x80) > 0) f |= (byte)Fl.S;
@@ -2348,7 +2347,7 @@ namespace z80
                     }
                 case 0xA2:
                     {
-                        var a = (byte)ports.ReadPort(Bc);
+                        var a = ports.ReadPort(Bc);
                         var hl = Hl;
                         mem[hl++] = a;
                         registers[H] = (byte)(hl >> 8);
@@ -2368,7 +2367,7 @@ namespace z80
                     }
                 case 0xB2:
                     {
-                        var a = (byte)ports.ReadPort(Bc);
+                        var a = ports.ReadPort(Bc);
                         var hl = Hl;
                         mem[hl++] = a;
                         registers[H] = (byte)(hl >> 8);
@@ -2397,7 +2396,7 @@ namespace z80
                     }
                 case 0xAA:
                     {
-                        var a = (byte)ports.ReadPort(Bc);
+                        var a = ports.ReadPort(Bc);
                         var hl = Hl;
                         mem[hl--] = a;
                         registers[H] = (byte)(hl >> 8);
@@ -2416,7 +2415,7 @@ namespace z80
                     }
                 case 0xBA:
                     {
-                        var a = (byte)ports.ReadPort(Bc);
+                        var a = ports.ReadPort(Bc);
                         var hl = Hl;
                         mem[hl--] = a;
                         registers[H] = (byte)(hl >> 8);
@@ -3096,7 +3095,6 @@ namespace z80
                         var d = (sbyte)Fetch();
                         var a = registers[A];
                         Adc(mem[(ushort)(Iy + d)]);
-
 #if (DEBUG)
                         _logger.Log($"ADC A, (IY{d:+0;-#})");
 #endif
@@ -3269,7 +3267,6 @@ namespace z80
                         Wait(8);
                         return;
                     }
-
             }
 #if (DEBUG)
             _logger.Log($"FD {mc:X2}: {hi:X2} {lo:X2} {r:X2}");
@@ -3587,8 +3584,6 @@ namespace z80
             H = 0x10,
             Z = 0x40,
             S = 0x80,
-
-            None = 0x00,
             All = 0xD7
         }
 
