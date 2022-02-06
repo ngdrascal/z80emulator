@@ -3561,9 +3561,9 @@ namespace z80
             }
             else
             {
-#if (DEBUG)
-                _logger.Log($"Clock expected {((double)ticks) / realTicksPerTick:0.00} but was {((double)elapsed) / realTicksPerTick:0.00}");
-#endif
+                // #if (DEBUG)
+                //                 _logger.Log($"Clock expected {((double)ticks) / realTicksPerTick:0.00} but was {((double)elapsed) / realTicksPerTick:0.00}");
+                // #endif
                 _clock = DateTime.UtcNow;
             }
         }
@@ -3583,8 +3583,7 @@ namespace z80
             PV = 0x04,
             H = 0x10,
             Z = 0x40,
-            S = 0x80,
-            All = 0xD7
+            S = 0x80
         }
 
     }
