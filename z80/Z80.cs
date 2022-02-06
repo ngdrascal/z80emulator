@@ -48,6 +48,24 @@ namespace z80
             Reset();
         }
 
+        public byte A => _registers[AIdx];
+        public byte B => _registers[BIdx];
+        public byte C => _registers[CIdx];
+        public byte D => _registers[DIdx];
+        public byte E => _registers[EIdx];
+        public byte H => _registers[HIdx];
+        public byte L => _registers[LIdx];
+        public byte F => _registers[FIdx];
+
+        public byte Ap => _registers[ApIdx];
+        public byte Bp => _registers[BpIdx];
+        public byte Cp => _registers[CpIdx];
+        public byte Dp => _registers[DpIdx];
+        public byte Ep => _registers[EpIdx];
+        public byte Hp => _registers[HpIdx];
+        public byte Lp => _registers[LpIdx];
+        public byte Fp => _registers[FpIdx];
+
         public ushort Hl => (ushort)(_registers[LIdx] + (_registers[HIdx] << 8));
         public ushort Sp => (ushort)(_registers[SpIdx + 1] + (_registers[SpIdx] << 8));
         public ushort Ix => (ushort)(_registers[IxIdx + 1] + (_registers[IxIdx] << 8));
