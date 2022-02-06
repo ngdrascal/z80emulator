@@ -4,6 +4,7 @@ namespace z80.Tests
 {
     public class TestSystem
     {
+        // ReSharper disable InconsistentNaming
         private const byte _B = 0;
         private const byte _C = 1;
         private const byte _D = 2;
@@ -28,6 +29,7 @@ namespace z80.Tests
         private const byte _PC = 24;
         private const byte _IFF1 = 26;
         private const byte _IFF2 = 27;
+        // ReSharper restore InconsistentNaming
 
         private readonly byte[] _ram;
         private byte[] _dumpedState;
@@ -67,8 +69,6 @@ namespace z80.Tests
         public byte Hp => Reg8(_Hp);
         public byte Lp => Reg8(_Lp);
 
-
-
         // SZ-H-PNC
         public bool FlagS => (Reg8(_F) & 0x80) > 0;
         public bool FlagZ => (Reg8(_F) & 0x40) > 0;
@@ -84,12 +84,17 @@ namespace z80.Tests
 
         public byte Reg8(int reg)
         {
-            if (!_hasDump) throw new InvalidOperationException("Don't have a state!");
+            if (!_hasDump)
+                throw new InvalidOperationException("Don't have a state!");
+
             return _dumpedState[reg];
         }
+
         private ushort Reg16(byte reg)
         {
-            if (!_hasDump) throw new InvalidOperationException("Don't have a state!");
+            if (!_hasDump)
+                throw new InvalidOperationException("Don't have a state!");
+
             var ret = _dumpedState[reg + 1] + _dumpedState[reg] * 256;
             return (ushort)ret;
         }
@@ -111,9 +116,12 @@ namespace z80.Tests
                 //Console.WriteLine(_myZ80.DumpState());
                 //DumpRam();
             }
+
             _dumpedState = _myZ80.GetState();
             _hasDump = true;
-            if (!_myZ80.Halt) Console.WriteLine("BAILOUT!");
+
+            if (!_myZ80.Halt)
+                Console.WriteLine("BAILOUT!");
         }
 
         public bool Step()
@@ -123,8 +131,6 @@ namespace z80.Tests
             _hasDump = true;
             return _myZ80.Halt;
         }
-
-
 
         public void Reset()
         {
@@ -143,20 +149,30 @@ namespace z80.Tests
 
             for (var i = 0; i < 0x80; i++)
             {
-                if (i % 16 == 0) Console.Write("{0:X4} | ", i);
+                if (i % 16 == 0)
+                    Console.Write("{0:X4} | ", i);
+
                 Console.Write("{0:x2} ", _ram[i]);
-                if (i % 8 == 7) Console.Write("  ");
-                if (i % 16 == 15) Console.WriteLine();
+                if (i % 8 == 7)
+                    Console.Write("  ");
+
+                if (i % 16 == 15)
+                    Console.WriteLine();
             }
             Console.WriteLine();
+
             for (var i = 0x8080; i < 0x80A0; i++)
             {
-                if (i % 16 == 0) Console.Write("{0:X4} | ", i);
-                Console.Write("{0:x2} ", _ram[i]);
-                if (i % 8 == 7) Console.Write("  ");
-                if (i % 16 == 15) Console.WriteLine();
-            }
+                if (i % 16 == 0)
+                    Console.Write("{0:X4} | ", i);
 
+                Console.Write("{0:x2} ", _ram[i]);
+                if (i % 8 == 7)
+                    Console.Write("  ");
+
+                if (i % 16 == 15)
+                    Console.WriteLine();
+            }
         }
 
         public void RaiseInterrupt(bool maskable, byte data = 0x00)
