@@ -48,13 +48,14 @@ namespace z80
             Reset();
         }
 
-        private ushort Hl => (ushort)(_registers[LIdx] + (_registers[HIdx] << 8));
-        private ushort Sp => (ushort)(_registers[SpIdx + 1] + (_registers[SpIdx] << 8));
-        private ushort Ix => (ushort)(_registers[IxIdx + 1] + (_registers[IxIdx] << 8));
-        private ushort Iy => (ushort)(_registers[IyIdx + 1] + (_registers[IyIdx] << 8));
-        private ushort Bc => (ushort)((_registers[BIdx] << 8) + _registers[CIdx]);
-        private ushort De => (ushort)((_registers[DIdx] << 8) + _registers[EIdx]);
-        private ushort Pc => (ushort)(_registers[PcIdx + 1] + (_registers[PcIdx] << 8));
+        public ushort Hl => (ushort)(_registers[LIdx] + (_registers[HIdx] << 8));
+        public ushort Sp => (ushort)(_registers[SpIdx + 1] + (_registers[SpIdx] << 8));
+        public ushort Ix => (ushort)(_registers[IxIdx + 1] + (_registers[IxIdx] << 8));
+        public ushort Iy => (ushort)(_registers[IyIdx + 1] + (_registers[IyIdx] << 8));
+        public ushort Bc => (ushort)((_registers[BIdx] << 8) + _registers[CIdx]);
+        public ushort De => (ushort)((_registers[DIdx] << 8) + _registers[EIdx]);
+        public ushort Pc => (ushort)(_registers[PcIdx + 1] + (_registers[PcIdx] << 8));
+
         public bool Halt { get; private set; }
 
         public void Parse()
