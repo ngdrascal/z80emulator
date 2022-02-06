@@ -97,7 +97,7 @@ namespace z80.Tests
         public TestSystem(byte[] ram)
         {
             _ram = ram;
-            _myZ80 = new Z80(new Memory(ram, 0), TestPorts, NullLogger.DefaultLogger);
+            _myZ80 = new Z80(new Memory(ram, 0), TestPorts, ConsoleLogger.DefaultLogger);
         }
 
         public void Run()

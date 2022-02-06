@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace z80
 {
@@ -10,55 +11,8 @@ namespace z80
         string R16Name(byte n);
     }
 
-    public class NullLogger : IInstructionLogger
+    public class LoggerBase
     {
-        public static readonly IInstructionLogger DefaultLogger = new NullLogger();
- 
-        public void LogMemRead(ushort addr, byte val)
-        {
-        }
-
-        public void Log(string text)
-        {
-        }
-
-        public string RName(byte n)
-        {
-            return string.Empty;
-        }
-
-        public string R16Name(byte n)
-        {
-            return string.Empty;
-        }
-    }
-
-    public class ConsoleLogger : IInstructionLogger
-    {
-        private  bool _debugAtStart = true;
-
-        public void LogMemRead(ushort addr, byte val)
-        {
-            if (_debugAtStart)
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write($"{addr:X4} ");
-                _debugAtStart = false;
-            }
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"{val:X2} ");
-            Console.ForegroundColor = ConsoleColor.White;
-        }
-
-        public void Log(string text)
-        {
-            Console.CursorLeft = 20;
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine(text);
-            Console.ForegroundColor = ConsoleColor.White;
-            _debugAtStart = true;
-        }
-
         public string RName(byte n)
         {
             switch (n)
@@ -96,6 +50,58 @@ namespace z80
                     return "SP";
             }
             return "";
+        }
+    }
+
+    public class ConsoleLogger : LoggerBase, IInstructionLogger
+    {
+        public static readonly IInstructionLogger DefaultLogger = new ConsoleLogger();
+
+        private bool _debugAtStart = true;
+        private readonly StringBuilder _sb = new();
+
+        public void LogMemRead(ushort addr, byte val)
+        {
+            if (_debugAtStart)
+            {
+                _sb.Append($"{addr:X4} ");
+            }
+            _sb.Append($"{val:X2} ");
+        }
+
+        public void Log(string text)
+        {
+            Console.Write(_sb.ToString().PadRight(32));
+            Console.WriteLine(text);
+            _sb.Clear();
+            _debugAtStart = true;
+        }
+    }
+
+    public class ColorConsoleLogger : LoggerBase, IInstructionLogger
+    {
+        private bool _debugAtStart = true;
+
+        public void LogMemRead(ushort addr, byte val)
+        {
+            if (_debugAtStart)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write($"{addr:X4} ");
+                _debugAtStart = false;
+            }
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($"{val:X2} ");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        public void Log(string text)
+        {
+            Console.CursorLeft = 20;
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(text);
+            Console.ForegroundColor = ConsoleColor.White;
+            _debugAtStart = true;
         }
     }
 }
