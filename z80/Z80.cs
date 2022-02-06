@@ -1,36 +1,35 @@
 using System;
 using System.Threading;
 
-// ReSharper disable InconsistentNaming
-
 namespace z80
 {
     public class Z80
     {
-        private const byte B = 0;
-        private const byte C = 1;
-        private const byte D = 2;
-        private const byte E = 3;
-        private const byte H = 4;
-        private const byte L = 5;
-        private const byte F = 6;
-        private const byte A = 7;
-        private const byte Bp = 8;
-        private const byte Cp = 9;
-        private const byte Dp = 10;
-        private const byte Ep = 11;
-        private const byte Hp = 12;
-        private const byte Lp = 13;
-        private const byte Fp = 14;
-        private const byte Ap = 15;
-        private const byte I = 16;
-        private const byte R = 17;
-        private const byte IX = 18;
-        private const byte IY = 20;
-        private const byte SP = 22;
-        private const byte PC = 24;
+        private const byte BIdx = 0;
+        private const byte CIdx = 1;
+        private const byte DIdx = 2;
+        private const byte EIdx = 3;
+        private const byte HIdx = 4;
+        private const byte LIdx = 5;
+        private const byte FIdx = 6;
+        private const byte AIdx = 7;
+        private const byte BpIdx = 8;
+        private const byte CpIdx = 9;
+        private const byte DpIdx = 10;
+        private const byte EpIdx = 11;
+        private const byte HpIdx = 12;
+        private const byte LpIdx = 13;
+        private const byte FpIdx = 14;
+        private const byte ApIdx = 15;
+        private const byte IIdx = 16;
+        private const byte RIdx = 17;
+        private const byte IxIdx = 18;
+        private const byte IyIdx = 20;
+        private const byte SpIdx = 22;
+        private const byte PcIdx = 24;
+        private readonly byte[] _registers = new byte[26];
+
         private readonly Memory mem;
-        private readonly byte[] registers = new byte[26];
         private DateTime _clock = DateTime.UtcNow;
         private bool IFF1;
         private bool IFF2;
@@ -49,13 +48,13 @@ namespace z80
             Reset();
         }
 
-        private ushort Hl => (ushort)(registers[L] + (registers[H] << 8));
-        private ushort Sp => (ushort)(registers[SP + 1] + (registers[SP] << 8));
-        private ushort Ix => (ushort)(registers[IX + 1] + (registers[IX] << 8));
-        private ushort Iy => (ushort)(registers[IY + 1] + (registers[IY] << 8));
-        private ushort Bc => (ushort)((registers[B] << 8) + registers[C]);
-        private ushort De => (ushort)((registers[D] << 8) + registers[E]);
-        private ushort Pc => (ushort)(registers[PC + 1] + (registers[PC] << 8));
+        private ushort Hl => (ushort)(_registers[LIdx] + (_registers[HIdx] << 8));
+        private ushort Sp => (ushort)(_registers[SpIdx + 1] + (_registers[SpIdx] << 8));
+        private ushort Ix => (ushort)(_registers[IxIdx + 1] + (_registers[IxIdx] << 8));
+        private ushort Iy => (ushort)(_registers[IyIdx + 1] + (_registers[IyIdx] << 8));
+        private ushort Bc => (ushort)((_registers[BIdx] << 8) + _registers[CIdx]);
+        private ushort De => (ushort)((_registers[DIdx] << 8) + _registers[EIdx]);
+        private ushort Pc => (ushort)(_registers[PcIdx + 1] + (_registers[PcIdx] << 8));
         public bool Halt { get; private set; }
 
         public void Parse()
@@ -65,10 +64,10 @@ namespace z80
                 var stack = Sp;
                 mem[--stack] = (byte)(Pc >> 8);
                 mem[--stack] = (byte)(Pc);
-                registers[SP] = (byte)(stack >> 8);
-                registers[SP + 1] = (byte)(stack);
-                registers[PC] = 0x00;
-                registers[PC + 1] = 0x66;
+                _registers[SpIdx] = (byte)(stack >> 8);
+                _registers[SpIdx + 1] = (byte)(stack);
+                _registers[PcIdx] = 0x00;
+                _registers[PcIdx + 1] = 0x66;
                 IFF1 = IFF2;
                 IFF1 = false;
 #if (DEBUG)
@@ -92,10 +91,10 @@ namespace z80
                             var stack = Sp;
                             mem[--stack] = (byte)(Pc >> 8);
                             mem[--stack] = (byte)(Pc);
-                            registers[SP] = (byte)(stack >> 8);
-                            registers[SP + 1] = (byte)(stack);
-                            registers[PC] = 0x00;
-                            registers[PC + 1] = (byte)(instruction & 0x38);
+                            _registers[SpIdx] = (byte)(stack >> 8);
+                            _registers[SpIdx + 1] = (byte)(stack);
+                            _registers[PcIdx] = 0x00;
+                            _registers[PcIdx + 1] = (byte)(instruction & 0x38);
                             Wait(17);
 
 #if (DEBUG)
@@ -109,10 +108,10 @@ namespace z80
                             var stack = Sp;
                             mem[--stack] = (byte)(Pc >> 8);
                             mem[--stack] = (byte)(Pc);
-                            registers[SP] = (byte)(stack >> 8);
-                            registers[SP + 1] = (byte)(stack);
-                            registers[PC] = 0x00;
-                            registers[PC + 1] = 0x38;
+                            _registers[SpIdx] = (byte)(stack >> 8);
+                            _registers[SpIdx + 1] = (byte)(stack);
+                            _registers[PcIdx] = 0x00;
+                            _registers[PcIdx + 1] = 0x38;
 #if (DEBUG)
                             _logger.Log("MI 1");
 #endif
@@ -126,11 +125,11 @@ namespace z80
                             var stack = Sp;
                             mem[--stack] = (byte)(Pc >> 8);
                             mem[--stack] = (byte)(Pc);
-                            registers[SP] = (byte)(stack >> 8);
-                            registers[SP + 1] = (byte)(stack);
-                            var address = (ushort)((registers[I] << 8) + vector);
-                            registers[PC] = mem[address++];
-                            registers[PC + 1] = mem[address];
+                            _registers[SpIdx] = (byte)(stack >> 8);
+                            _registers[SpIdx + 1] = (byte)(stack);
+                            var address = (ushort)((_registers[IIdx] << 8) + vector);
+                            _registers[PcIdx] = mem[address++];
+                            _registers[PcIdx + 1] = mem[address];
 #if (DEBUG)
                             _logger.Log("MI 2");
 #endif
@@ -158,12 +157,12 @@ namespace z80
                     Halt = true;
                     return;
                 }
-                var reg = useHL2 ? mem[Hl] : registers[lo];
+                var reg = useHL2 ? mem[Hl] : _registers[lo];
 
                 if (useHL1)
                     mem[Hl] = reg;
                 else
-                    registers[r] = reg;
+                    _registers[r] = reg;
                 Wait(useHL1 || useHL2 ? 7 : 4);
 #if (DEBUG)
                 _logger.Log($"LD {(useHL1 ? "(HL)" : _logger.RName(r))}, {(useHL2 ? "(HL)" : _logger.RName(lo))}");
@@ -196,10 +195,10 @@ namespace z80
                 case 0x21:
                     {
                         // LD dd, nn
-                        registers[r + 1] = Fetch();
-                        registers[r] = Fetch();
+                        _registers[r + 1] = Fetch();
+                        _registers[r] = Fetch();
 #if (DEBUG)
-                        _logger.Log($"LD {_logger.RName(r)}{_logger.RName((byte)(r + 1))}, 0x{registers[r]:X2}{registers[r + 1]:X2}");
+                        _logger.Log($"LD {_logger.RName(r)}{_logger.RName((byte)(r + 1))}, 0x{_registers[r]:X2}{_registers[r + 1]:X2}");
 #endif
                         Wait(10);
                         return;
@@ -207,10 +206,10 @@ namespace z80
                 case 0x31:
                     {
                         // LD SP, nn
-                        registers[SP + 1] = Fetch();
-                        registers[SP] = Fetch();
+                        _registers[SpIdx + 1] = Fetch();
+                        _registers[SpIdx] = Fetch();
 #if (DEBUG)
-                        _logger.Log($"LD SP, 0x{registers[SP]:X2}{registers[SP + 1]:X2}");
+                        _logger.Log($"LD SP, 0x{_registers[SpIdx]:X2}{_registers[SpIdx + 1]:X2}");
 #endif
                         Wait(10);
                         return;
@@ -225,7 +224,7 @@ namespace z80
                     {
                         // LD r,n
                         var n = Fetch();
-                        registers[r] = n;
+                        _registers[r] = n;
 #if (DEBUG)
                         _logger.Log($"LD {_logger.RName(r)}, 0x{n:X2}");
 #endif
@@ -246,7 +245,7 @@ namespace z80
                 case 0x0A:
                     {
                         // LD A, (BC)
-                        registers[A] = mem[Bc];
+                        _registers[AIdx] = mem[Bc];
 #if (DEBUG)
                         _logger.Log("LD A, (BC)");
 #endif
@@ -256,7 +255,7 @@ namespace z80
                 case 0x1A:
                     {
                         // LD A, (DE)
-                        registers[A] = mem[De];
+                        _registers[AIdx] = mem[De];
 #if (DEBUG)
                         _logger.Log("LD A, (DE)");
 #endif
@@ -267,7 +266,7 @@ namespace z80
                     {
                         // LD A, (nn)
                         var addr = Fetch16();
-                        registers[A] = mem[addr];
+                        _registers[AIdx] = mem[addr];
 #if (DEBUG)
                         _logger.Log($"LD A, (0x{addr:X4})");
 #endif
@@ -277,7 +276,7 @@ namespace z80
                 case 0x02:
                     {
                         // LD (BC), A
-                        mem[Bc] = registers[A];
+                        mem[Bc] = _registers[AIdx];
 #if (DEBUG)
                         _logger.Log("LD (BC), A");
 #endif
@@ -287,7 +286,7 @@ namespace z80
                 case 0x12:
                     {
                         // LD (DE), A
-                        mem[De] = registers[A];
+                        mem[De] = _registers[AIdx];
 #if (DEBUG)
                         _logger.Log("LD (DE), A");
 #endif
@@ -298,7 +297,7 @@ namespace z80
                     {
                         // LD (nn), A 
                         var addr = Fetch16();
-                        mem[addr] = registers[A];
+                        mem[addr] = _registers[AIdx];
 #if (DEBUG)
                         _logger.Log($"LD (0x{addr:X4}), A");
 #endif
@@ -309,8 +308,8 @@ namespace z80
                     {
                         // LD HL, (nn) 
                         var addr = Fetch16();
-                        registers[L] = mem[addr++];
-                        registers[H] = mem[addr];
+                        _registers[LIdx] = mem[addr++];
+                        _registers[HIdx] = mem[addr];
 #if (DEBUG)
                         _logger.Log($"LD HL, (0x{--addr:X4})");
 #endif
@@ -321,8 +320,8 @@ namespace z80
                     {
                         // LD (nn), HL
                         var addr = Fetch16();
-                        mem[addr++] = registers[L];
-                        mem[addr] = registers[H];
+                        mem[addr++] = _registers[LIdx];
+                        mem[addr] = _registers[HIdx];
 #if (DEBUG)
                         _logger.Log($"LD (0x{--addr:X4}), HL");
 #endif
@@ -332,8 +331,8 @@ namespace z80
                 case 0xF9:
                     {
                         // LD SP, HL
-                        registers[SP + 1] = registers[L];
-                        registers[SP] = registers[H];
+                        _registers[SpIdx + 1] = _registers[LIdx];
+                        _registers[SpIdx] = _registers[HIdx];
 #if (DEBUG)
                         _logger.Log("LD SP, HL");
 #endif
@@ -345,10 +344,10 @@ namespace z80
                     {
                         // PUSH BC
                         var addr = Sp;
-                        mem[--addr] = registers[B];
-                        mem[--addr] = registers[C];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        mem[--addr] = _registers[BIdx];
+                        mem[--addr] = _registers[CIdx];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("PUSH BC");
 #endif
@@ -359,10 +358,10 @@ namespace z80
                     {
                         // PUSH DE
                         var addr = Sp;
-                        mem[--addr] = registers[D];
-                        mem[--addr] = registers[E];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        mem[--addr] = _registers[DIdx];
+                        mem[--addr] = _registers[EIdx];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("PUSH DE");
 #endif
@@ -373,10 +372,10 @@ namespace z80
                     {
                         // PUSH HL
                         var addr = Sp;
-                        mem[--addr] = registers[H];
-                        mem[--addr] = registers[L];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        mem[--addr] = _registers[HIdx];
+                        mem[--addr] = _registers[LIdx];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("PUSH HL");
 #endif
@@ -387,10 +386,10 @@ namespace z80
                     {
                         // PUSH AF
                         var addr = Sp;
-                        mem[--addr] = registers[A];
-                        mem[--addr] = registers[F];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        mem[--addr] = _registers[AIdx];
+                        mem[--addr] = _registers[FIdx];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("PUSH AF");
 #endif
@@ -401,10 +400,10 @@ namespace z80
                     {
                         // POP BC
                         var addr = Sp;
-                        registers[C] = mem[addr++];
-                        registers[B] = mem[addr++];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        _registers[CIdx] = mem[addr++];
+                        _registers[BIdx] = mem[addr++];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("POP BC");
 #endif
@@ -415,10 +414,10 @@ namespace z80
                     {
                         // POP DE
                         var addr = Sp;
-                        registers[E] = mem[addr++];
-                        registers[D] = mem[addr++];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        _registers[EIdx] = mem[addr++];
+                        _registers[DIdx] = mem[addr++];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("POP DE");
 #endif
@@ -429,10 +428,10 @@ namespace z80
                     {
                         // POP HL
                         var addr = Sp;
-                        registers[L] = mem[addr++];
-                        registers[H] = mem[addr++];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        _registers[LIdx] = mem[addr++];
+                        _registers[HIdx] = mem[addr++];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("POP HL");
 #endif
@@ -443,10 +442,10 @@ namespace z80
                     {
                         // POP AF
                         var addr = Sp;
-                        registers[F] = mem[addr++];
-                        registers[A] = mem[addr++];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        _registers[FIdx] = mem[addr++];
+                        _registers[AIdx] = mem[addr++];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("POP AF");
 #endif
@@ -456,8 +455,8 @@ namespace z80
                 case 0xEB:
                     {
                         // EX DE, HL
-                        SwapReg8(D, H);
-                        SwapReg8(E, L);
+                        SwapReg8(DIdx, HIdx);
+                        SwapReg8(EIdx, LIdx);
 #if (DEBUG)
                         _logger.Log("EX DE, HL");
 #endif
@@ -467,8 +466,8 @@ namespace z80
                 case 0x08:
                     {
                         // EX AF, AF'
-                        SwapReg8(Ap, A);
-                        SwapReg8(Fp, F);
+                        SwapReg8(ApIdx, AIdx);
+                        SwapReg8(FpIdx, FIdx);
 #if (DEBUG)
                         _logger.Log("EX AF, AF'");
 #endif
@@ -478,12 +477,12 @@ namespace z80
                 case 0xD9:
                     {
                         // EXX
-                        SwapReg8(B, Bp);
-                        SwapReg8(C, Cp);
-                        SwapReg8(D, Dp);
-                        SwapReg8(E, Ep);
-                        SwapReg8(H, Hp);
-                        SwapReg8(L, Lp);
+                        SwapReg8(BIdx, BpIdx);
+                        SwapReg8(CIdx, CpIdx);
+                        SwapReg8(DIdx, DpIdx);
+                        SwapReg8(EIdx, EpIdx);
+                        SwapReg8(HIdx, HpIdx);
+                        SwapReg8(LIdx, LpIdx);
 #if (DEBUG)
                         _logger.Log("EXX");
 #endif
@@ -495,12 +494,12 @@ namespace z80
                         // EX (SP), HL
                         var addr = Sp;
 
-                        var tmp = registers[L];
-                        registers[L] = mem[addr];
+                        var tmp = _registers[LIdx];
+                        _registers[LIdx] = mem[addr];
                         mem[addr++] = tmp;
 
-                        tmp = registers[H];
-                        registers[H] = mem[addr];
+                        tmp = _registers[HIdx];
+                        _registers[HIdx] = mem[addr];
                         mem[addr] = tmp;
 
 #if (DEBUG)
@@ -518,7 +517,7 @@ namespace z80
                 case 0x87:
                     {
                         // ADD A, r
-                        Add(registers[lo]);
+                        Add(_registers[lo]);
 #if (DEBUG)
                         _logger.Log($"ADD A, {_logger.RName(lo)}");
 #endif
@@ -556,7 +555,7 @@ namespace z80
                 case 0x8F:
                     {
                         // ADC A, r
-                        Adc(registers[lo]);
+                        Adc(_registers[lo]);
 #if (DEBUG)
                         _logger.Log($"ADC A, {_logger.RName(lo)}");
 #endif
@@ -593,7 +592,7 @@ namespace z80
                 case 0x97:
                     {
                         // SUB A, r
-                        Sub(registers[lo]);
+                        Sub(_registers[lo]);
 #if (DEBUG)
                         _logger.Log($"SUB A, {_logger.RName(lo)}");
 #endif
@@ -630,7 +629,7 @@ namespace z80
                 case 0x9F:
                     {
                         // SBC A, r
-                        Sbc(registers[lo]);
+                        Sbc(_registers[lo]);
 #if (DEBUG)
                         _logger.Log($"SBC A, {_logger.RName(lo)}");
 #endif
@@ -668,7 +667,7 @@ namespace z80
                 case 0xA7:
                     {
                         // AND A, r
-                        And(registers[lo]);
+                        And(_registers[lo]);
 #if (DEBUG)
                         _logger.Log($"AND A, {_logger.RName(lo)}");
 #endif
@@ -706,7 +705,7 @@ namespace z80
                 case 0xB7:
                     {
                         // OR A, r
-                        Or(registers[lo]);
+                        Or(_registers[lo]);
 #if (DEBUG)
                         _logger.Log($"OR A, {_logger.RName(lo)}");
 #endif
@@ -743,7 +742,7 @@ namespace z80
                 case 0xAF:
                     {
                         // XOR A, r
-                        Xor(registers[lo]);
+                        Xor(_registers[lo]);
 #if (DEBUG)
                         _logger.Log($"XOR A, {_logger.RName(lo)}");
 #endif
@@ -803,7 +802,7 @@ namespace z80
                 case 0xBF:
                     {
                         // CP A, r
-                        Cmp(registers[lo]);
+                        Cmp(_registers[lo]);
 #if (DEBUG)
                         _logger.Log($"CP A, {_logger.RName(lo)}");
 #endif
@@ -840,7 +839,7 @@ namespace z80
                 case 0x3C:
                     {
                         // INC r
-                        registers[r] = Inc(registers[r]);
+                        _registers[r] = Inc(_registers[r]);
 #if (DEBUG)
                         _logger.Log($"INC {_logger.RName(r)}");
 #endif
@@ -867,7 +866,7 @@ namespace z80
                 case 0x3D:
                     {
                         // DEC r
-                        registers[r] = Dec(registers[r]);
+                        _registers[r] = Dec(_registers[r]);
 #if (DEBUG)
                         _logger.Log($"DEC {_logger.RName(r)}");
 #endif
@@ -887,12 +886,12 @@ namespace z80
                 case 0x27:
                     {
                         // DAA
-                        var a = registers[A];
-                        var f = registers[F];
+                        var a = _registers[AIdx];
+                        var f = _registers[FIdx];
                         if ((a & 0x0F) > 0x09 || (f & (byte)Fl.H) > 0)
                         {
                             Add(0x06);
-                            a = registers[A];
+                            a = _registers[AIdx];
                         }
                         if ((a & 0xF0) > 0x90 || (f & (byte)Fl.C) > 0)
                         {
@@ -907,8 +906,8 @@ namespace z80
                 case 0x2F:
                     {
                         // CPL
-                        registers[A] ^= 0xFF;
-                        registers[F] |= (byte)(Fl.H | Fl.N);
+                        _registers[AIdx] ^= 0xFF;
+                        _registers[FIdx] |= (byte)(Fl.H | Fl.N);
 #if (DEBUG)
                         _logger.Log("CPL");
 #endif
@@ -918,8 +917,8 @@ namespace z80
                 case 0x3F:
                     {
                         // CCF
-                        registers[F] &= (byte)~(Fl.N);
-                        registers[F] ^= (byte)(Fl.C);
+                        _registers[FIdx] &= (byte)~(Fl.N);
+                        _registers[FIdx] ^= (byte)(Fl.C);
 #if (DEBUG)
                         _logger.Log("CCF");
 #endif
@@ -929,8 +928,8 @@ namespace z80
                 case 0x37:
                     {
                         // SCF
-                        registers[F] &= (byte)~(Fl.N);
-                        registers[F] |= (byte)(Fl.C);
+                        _registers[FIdx] &= (byte)~(Fl.N);
+                        _registers[FIdx] |= (byte)(Fl.C);
 #if (DEBUG)
                         _logger.Log("SCF");
 #endif
@@ -977,8 +976,8 @@ namespace z80
                 case 0x03:
                     {
                         var val = Bc + 1;
-                        registers[B] = (byte)(val >> 8);
-                        registers[C] = (byte)(val & 0xFF);
+                        _registers[BIdx] = (byte)(val >> 8);
+                        _registers[CIdx] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("INC BC");
 #endif
@@ -988,8 +987,8 @@ namespace z80
                 case 0x13:
                     {
                         var val = De + 1;
-                        registers[D] = (byte)(val >> 8);
-                        registers[E] = (byte)(val & 0xFF);
+                        _registers[DIdx] = (byte)(val >> 8);
+                        _registers[EIdx] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("INC DE");
 #endif
@@ -999,8 +998,8 @@ namespace z80
                 case 0x23:
                     {
                         var val = Hl + 1;
-                        registers[H] = (byte)(val >> 8);
-                        registers[L] = (byte)(val & 0xFF);
+                        _registers[HIdx] = (byte)(val >> 8);
+                        _registers[LIdx] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("INC HL");
 #endif
@@ -1010,8 +1009,8 @@ namespace z80
                 case 0x33:
                     {
                         var val = Sp + 1;
-                        registers[SP] = (byte)(val >> 8);
-                        registers[SP + 1] = (byte)(val & 0xFF);
+                        _registers[SpIdx] = (byte)(val >> 8);
+                        _registers[SpIdx + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("INC SP");
 #endif
@@ -1021,8 +1020,8 @@ namespace z80
                 case 0x0B:
                     {
                         var val = Bc - 1;
-                        registers[B] = (byte)(val >> 8);
-                        registers[C] = (byte)(val & 0xFF);
+                        _registers[BIdx] = (byte)(val >> 8);
+                        _registers[CIdx] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("DEC BC");
 #endif
@@ -1032,8 +1031,8 @@ namespace z80
                 case 0x1B:
                     {
                         var val = De - 1;
-                        registers[D] = (byte)(val >> 8);
-                        registers[E] = (byte)(val & 0xFF);
+                        _registers[DIdx] = (byte)(val >> 8);
+                        _registers[EIdx] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("DEC DE");
 #endif
@@ -1043,8 +1042,8 @@ namespace z80
                 case 0x2B:
                     {
                         var val = Hl - 1;
-                        registers[H] = (byte)(val >> 8);
-                        registers[L] = (byte)(val & 0xFF);
+                        _registers[HIdx] = (byte)(val >> 8);
+                        _registers[LIdx] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("DEC HL");
 #endif
@@ -1054,8 +1053,8 @@ namespace z80
                 case 0x3B:
                     {
                         var val = Sp - 1;
-                        registers[SP] = (byte)(val >> 8);
-                        registers[SP + 1] = (byte)(val & 0xFF);
+                        _registers[SpIdx] = (byte)(val >> 8);
+                        _registers[SpIdx + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("DEC SP");
 #endif
@@ -1064,12 +1063,12 @@ namespace z80
                     }
                 case 0x07:
                     {
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var c = (byte)((a & 0x80) >> 7);
                         a <<= 1;
-                        registers[A] = a;
-                        registers[F] &= (byte)~(Fl.H | Fl.N | Fl.C);
-                        registers[F] |= c;
+                        _registers[AIdx] = a;
+                        _registers[FIdx] &= (byte)~(Fl.H | Fl.N | Fl.C);
+                        _registers[FIdx] |= c;
 #if (DEBUG)
                         _logger.Log("RLCA");
 #endif
@@ -1078,15 +1077,15 @@ namespace z80
                     }
                 case 0x17:
                     {
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var c = (byte)((a & 0x80) >> 7);
                         a <<= 1;
-                        var f = registers[F];
+                        var f = _registers[FIdx];
                         a |= (byte)(f & (byte)Fl.C);
-                        registers[A] = a;
+                        _registers[AIdx] = a;
                         f &= (byte)~(Fl.H | Fl.N | Fl.C);
                         f |= c;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("RLA");
 #endif
@@ -1095,12 +1094,12 @@ namespace z80
                     }
                 case 0x0F:
                     {
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var c = (byte)(a & 0x01);
                         a >>= 1;
-                        registers[A] = a;
-                        registers[F] &= (byte)~(Fl.H | Fl.N | Fl.C);
-                        registers[F] |= c;
+                        _registers[AIdx] = a;
+                        _registers[FIdx] &= (byte)~(Fl.H | Fl.N | Fl.C);
+                        _registers[FIdx] |= c;
 #if (DEBUG)
                         _logger.Log("RRCA");
 #endif
@@ -1109,15 +1108,15 @@ namespace z80
                     }
                 case 0x1F:
                     {
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var c = (byte)(a & 0x01);
                         a >>= 1;
-                        var f = registers[F];
+                        var f = _registers[FIdx];
                         a |= (byte)((f & (byte)Fl.C) << 7);
-                        registers[A] = a;
+                        _registers[AIdx] = a;
                         f &= (byte)~(Fl.H | Fl.N | Fl.C);
                         f |= c;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("RRA");
 #endif
@@ -1127,8 +1126,8 @@ namespace z80
                 case 0xC3:
                     {
                         var addr = Fetch16();
-                        registers[PC] = (byte)(addr >> 8);
-                        registers[PC + 1] = (byte)(addr);
+                        _registers[PcIdx] = (byte)(addr >> 8);
+                        _registers[PcIdx + 1] = (byte)(addr);
 #if (DEBUG)
                         _logger.Log($"JP 0x{addr:X4}");
 #endif
@@ -1147,8 +1146,8 @@ namespace z80
                         var addr = Fetch16();
                         if (JumpCondition(r))
                         {
-                            registers[PC] = (byte)(addr >> 8);
-                            registers[PC + 1] = (byte)(addr);
+                            _registers[PcIdx] = (byte)(addr >> 8);
+                            _registers[PcIdx + 1] = (byte)(addr);
                         }
 #if (DEBUG)
                         _logger.Log($"JP {JCName(r)}, 0x{addr:X4}");
@@ -1162,8 +1161,8 @@ namespace z80
                         // order is important here
                         var d = (sbyte)Fetch();
                         var addr = Pc + d;
-                        registers[PC] = (byte)(addr >> 8);
-                        registers[PC + 1] = (byte)(addr);
+                        _registers[PcIdx] = (byte)(addr >> 8);
+                        _registers[PcIdx + 1] = (byte)(addr);
 #if (DEBUG)
                         _logger.Log($"JR 0x{addr:X4}");
 #endif
@@ -1180,8 +1179,8 @@ namespace z80
                         var addr = Pc + d;
                         if (JumpCondition((byte)(r & 3)))
                         {
-                            registers[PC] = (byte)(addr >> 8);
-                            registers[PC + 1] = (byte)(addr);
+                            _registers[PcIdx] = (byte)(addr >> 8);
+                            _registers[PcIdx + 1] = (byte)(addr);
                             Wait(12);
                         }
                         else
@@ -1197,8 +1196,8 @@ namespace z80
                 case 0xE9:
                     {
                         var addr = Hl;
-                        registers[PC] = (byte)(addr >> 8);
-                        registers[PC + 1] = (byte)(addr);
+                        _registers[PcIdx] = (byte)(addr >> 8);
+                        _registers[PcIdx + 1] = (byte)(addr);
 #if (DEBUG)
                         _logger.Log("JP HL");
 #endif
@@ -1210,12 +1209,12 @@ namespace z80
                         // order is important here
                         var d = (sbyte)Fetch();
                         var addr = Pc + d;
-                        var b = registers[B];
-                        registers[B] = --b;
+                        var b = _registers[BIdx];
+                        _registers[BIdx] = --b;
                         if (b != 0)
                         {
-                            registers[PC] = (byte)(addr >> 8);
-                            registers[PC + 1] = (byte)(addr);
+                            _registers[PcIdx] = (byte)(addr >> 8);
+                            _registers[PcIdx + 1] = (byte)(addr);
                             Wait(13);
                         }
                         else
@@ -1233,10 +1232,10 @@ namespace z80
                         var stack = Sp;
                         mem[--stack] = (byte)(Pc >> 8);
                         mem[--stack] = (byte)(Pc);
-                        registers[SP] = (byte)(stack >> 8);
-                        registers[SP + 1] = (byte)(stack);
-                        registers[PC] = (byte)(addr >> 8);
-                        registers[PC + 1] = (byte)(addr);
+                        _registers[SpIdx] = (byte)(stack >> 8);
+                        _registers[SpIdx + 1] = (byte)(stack);
+                        _registers[PcIdx] = (byte)(addr >> 8);
+                        _registers[PcIdx + 1] = (byte)(addr);
 #if (DEBUG)
                         _logger.Log($"CALL 0x{addr:X4}");
 #endif
@@ -1258,10 +1257,10 @@ namespace z80
                             var stack = Sp;
                             mem[--stack] = (byte)(Pc >> 8);
                             mem[--stack] = (byte)(Pc);
-                            registers[SP] = (byte)(stack >> 8);
-                            registers[SP + 1] = (byte)(stack);
-                            registers[PC] = (byte)(addr >> 8);
-                            registers[PC + 1] = (byte)(addr);
+                            _registers[SpIdx] = (byte)(stack >> 8);
+                            _registers[SpIdx + 1] = (byte)(stack);
+                            _registers[PcIdx] = (byte)(addr >> 8);
+                            _registers[PcIdx + 1] = (byte)(addr);
                             Wait(17);
                         }
                         else
@@ -1277,10 +1276,10 @@ namespace z80
                 case 0xC9:
                     {
                         var stack = Sp;
-                        registers[PC + 1] = mem[stack++];
-                        registers[PC] = mem[stack++];
-                        registers[SP] = (byte)(stack >> 8);
-                        registers[SP + 1] = (byte)(stack);
+                        _registers[PcIdx + 1] = mem[stack++];
+                        _registers[PcIdx] = mem[stack++];
+                        _registers[SpIdx] = (byte)(stack >> 8);
+                        _registers[SpIdx + 1] = (byte)(stack);
 #if (DEBUG)
                         _logger.Log("RET");
 #endif
@@ -1299,10 +1298,10 @@ namespace z80
                         if (JumpCondition(r))
                         {
                             var stack = Sp;
-                            registers[PC + 1] = mem[stack++];
-                            registers[PC] = mem[stack++];
-                            registers[SP] = (byte)(stack >> 8);
-                            registers[SP + 1] = (byte)(stack);
+                            _registers[PcIdx + 1] = mem[stack++];
+                            _registers[PcIdx] = mem[stack++];
+                            _registers[SpIdx] = (byte)(stack >> 8);
+                            _registers[SpIdx + 1] = (byte)(stack);
                             Wait(11);
                         }
                         else
@@ -1327,10 +1326,10 @@ namespace z80
                         var stack = Sp;
                         mem[--stack] = (byte)(Pc >> 8);
                         mem[--stack] = (byte)(Pc);
-                        registers[SP] = (byte)(stack >> 8);
-                        registers[SP + 1] = (byte)(stack);
-                        registers[PC] = 0;
-                        registers[PC + 1] = (byte)(mc & 0x38);
+                        _registers[SpIdx] = (byte)(stack >> 8);
+                        _registers[SpIdx + 1] = (byte)(stack);
+                        _registers[PcIdx] = 0;
+                        _registers[PcIdx + 1] = (byte)(mc & 0x38);
 #if (DEBUG)
                         _logger.Log($"RST 0x{mc & 0x38:X4}");
 #endif
@@ -1339,8 +1338,8 @@ namespace z80
                     }
                 case 0xDB:
                     {
-                        var port = Fetch() + (registers[A] << 8);
-                        registers[A] = ports.ReadPort((ushort)port);
+                        var port = Fetch() + (_registers[AIdx] << 8);
+                        _registers[AIdx] = ports.ReadPort((ushort)port);
 #if (DEBUG)
                         _logger.Log($"IN A, (0x{port:X2})");
 #endif
@@ -1349,8 +1348,8 @@ namespace z80
                     }
                 case 0xD3:
                     {
-                        var port = Fetch() + (registers[A] << 8);
-                        ports.WritePort((ushort)port, registers[A]);
+                        var port = Fetch() + (_registers[AIdx] << 8);
+                        ports.WritePort((ushort)port, _registers[AIdx]);
 #if (DEBUG)
                         _logger.Log($"OUT (0x{port:X2}), A");
 #endif
@@ -1405,7 +1404,7 @@ namespace z80
             var useHL = lo == 6;
             var useIX = mode == 0xDD;
             var useIY = mode == 0XFD;
-            var reg = useHL ? useIX ? mem[(ushort)(Ix + d)] : useIY ? mem[(ushort)(Iy + d)] : mem[Hl] : registers[lo];
+            var reg = useHL ? useIX ? mem[(ushort)(Ix + d)] : useIY ? mem[(ushort)(Iy + d)] : mem[Hl] : _registers[lo];
 #if (DEBUG)
             string debug_target;
             if (useHL)
@@ -1428,7 +1427,7 @@ namespace z80
                         c = (byte)((reg & 0x80) >> 7);
                         reg <<= 1;
                     }
-                    var f = registers[F];
+                    var f = _registers[FIdx];
                     switch (r)
                     {
                         case 0:
@@ -1500,7 +1499,7 @@ namespace z80
                     if (reg == 0) f |= (byte)Fl.Z;
                     if (Parity(reg)) f |= (byte)Fl.PV;
                     f |= c;
-                    registers[F] = f;
+                    _registers[FIdx] = f;
 
                     break;
                 case 1:
@@ -1557,63 +1556,63 @@ namespace z80
                     mem[(ushort)(Iy + d)] = reg;
                     Wait(23);
                 }
-                registers[lo] = reg;
+                _registers[lo] = reg;
                 Wait(8);
             }
         }
 
         private void Bit(byte bit, byte value)
         {
-            var f = (byte)(registers[F] & (byte)~(Fl.Z | Fl.H | Fl.N));
+            var f = (byte)(_registers[FIdx] & (byte)~(Fl.Z | Fl.H | Fl.N));
             if ((value & (0x01 << bit)) == 0) f |= (byte)Fl.Z;
             f |= (byte)Fl.H;
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private void AddHl(ushort value)
         {
             var sum = Add(Hl, value);
-            registers[H] = (byte)(sum >> 8);
-            registers[L] = (byte)(sum & 0xFF);
+            _registers[HIdx] = (byte)(sum >> 8);
+            _registers[LIdx] = (byte)(sum & 0xFF);
         }
 
         private void AddIx(ushort value)
         {
             var sum = Add(Ix, value);
-            registers[IX] = (byte)(sum >> 8);
-            registers[IX + 1] = (byte)(sum & 0xFF);
+            _registers[IxIdx] = (byte)(sum >> 8);
+            _registers[IxIdx + 1] = (byte)(sum & 0xFF);
         }
 
         private void AddIy(ushort value)
         {
             var sum = Add(Iy, value);
-            registers[IY] = (byte)(sum >> 8);
-            registers[IY + 1] = (byte)(sum & 0xFF);
+            _registers[IyIdx] = (byte)(sum >> 8);
+            _registers[IyIdx + 1] = (byte)(sum & 0xFF);
         }
 
         private ushort Add(ushort value1, ushort value2)
         {
             var sum = value1 + value2;
-            var f = (byte)(registers[F] & (byte)~(Fl.H | Fl.N | Fl.C));
+            var f = (byte)(_registers[FIdx] & (byte)~(Fl.H | Fl.N | Fl.C));
             if ((value1 & 0x0FFF) + (value2 & 0x0FFF) > 0x0FFF)
                 f |= (byte)Fl.H;
             if (sum > 0xFFFF)
                 f |= (byte)Fl.C;
-            registers[F] = f;
+            _registers[FIdx] = f;
             return (ushort)sum;
         }
 
         private void AdcHl(ushort value)
         {
             var sum = Adc(Hl, value);
-            registers[H] = (byte)(sum >> 8);
-            registers[L] = (byte)(sum & 0xFF);
+            _registers[HIdx] = (byte)(sum >> 8);
+            _registers[LIdx] = (byte)(sum & 0xFF);
         }
 
         private ushort Adc(ushort value1, ushort value2)
         {
-            var sum = value1 + value2 + (registers[F] & (byte)Fl.C);
-            var f = (byte)(registers[F] & (byte)~(Fl.S | Fl.Z | Fl.H | Fl.PV | Fl.N | Fl.C));
+            var sum = value1 + value2 + (_registers[FIdx] & (byte)Fl.C);
+            var f = (byte)(_registers[FIdx] & (byte)~(Fl.S | Fl.Z | Fl.H | Fl.PV | Fl.N | Fl.C));
             if ((short)sum < 0)
                 f |= (byte)Fl.S;
             if (sum == 0)
@@ -1624,33 +1623,33 @@ namespace z80
                 f |= (byte)Fl.PV;
             if (sum > 0xFFFF)
                 f |= (byte)Fl.C;
-            registers[F] = f;
+            _registers[FIdx] = f;
             return (ushort)sum;
         }
 
         private void SbcHl(ushort value)
         {
             var sum = Sbc(Hl, value);
-            registers[H] = (byte)(sum >> 8);
-            registers[L] = (byte)(sum & 0xFF);
+            _registers[HIdx] = (byte)(sum >> 8);
+            _registers[LIdx] = (byte)(sum & 0xFF);
         }
 
 
         private ushort Sbc(ushort value1, ushort value2)
         {
-            var diff = value1 - value2 - (registers[F] & (byte)Fl.C);
-            var f = (byte)(registers[F] & (byte)~(Fl.S | Fl.Z | Fl.H | Fl.PV | Fl.N | Fl.C));
+            var diff = value1 - value2 - (_registers[FIdx] & (byte)Fl.C);
+            var f = (byte)(_registers[FIdx] & (byte)~(Fl.S | Fl.Z | Fl.H | Fl.PV | Fl.N | Fl.C));
             if ((short)diff < 0)
                 f |= (byte)Fl.S;
             if (diff == 0)
                 f |= (byte)Fl.Z;
-            if ((value1 & 0xFFF) < (value2 & 0xFFF) + (registers[F] & (byte)Fl.C))
+            if ((value1 & 0xFFF) < (value2 & 0xFFF) + (_registers[FIdx] & (byte)Fl.C))
                 f |= (byte)Fl.H;
             if (diff > short.MaxValue || diff < short.MinValue)
                 f |= (byte)Fl.PV;
             if ((ushort)diff > value1)
                 f |= (byte)Fl.C;
-            registers[F] = f;
+            _registers[FIdx] = f;
             return (ushort)diff;
         }
 
@@ -1665,7 +1664,7 @@ namespace z80
                 case 0x47:
                     {
                         // LD I, A
-                        registers[I] = registers[A];
+                        _registers[IIdx] = _registers[AIdx];
 #if (DEBUG)
                         _logger.Log("LD I, A");
 #endif
@@ -1675,7 +1674,7 @@ namespace z80
                 case 0x4F:
                     {
                         // LD R, A
-                        registers[R] = registers[A];
+                        _registers[RIdx] = _registers[AIdx];
 #if (DEBUG)
                         _logger.Log("LD R, A");
 #endif
@@ -1696,9 +1695,9 @@ namespace z80
                                      * C is not affected.
                                      * If an interrupt occurs during execution of this instruction, the Parity flag contains a 0.
                                      */
-                        var i = registers[I];
-                        registers[A] = i;
-                        var f = (byte)(registers[F] & (~(byte)(Fl.H | Fl.PV | Fl.N | Fl.S | Fl.Z | Fl.PV)));
+                        var i = _registers[IIdx];
+                        _registers[AIdx] = i;
+                        var f = (byte)(_registers[FIdx] & (~(byte)(Fl.H | Fl.PV | Fl.N | Fl.S | Fl.Z | Fl.PV)));
                         if (i >= 0x80)
                         {
                             f |= (byte)Fl.S;
@@ -1711,7 +1710,7 @@ namespace z80
                         {
                             f |= (byte)Fl.PV;
                         }
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("LD A, I");
 #endif
@@ -1732,9 +1731,9 @@ namespace z80
                                      * C is not affected.
                                      * If an interrupt occurs during execution of this instruction, the parity flag contains a 0. 
                                      */
-                        var reg = registers[R];
-                        registers[A] = reg;
-                        var f = (byte)(registers[F] & (~(byte)(Fl.H | Fl.PV | Fl.N | Fl.S | Fl.Z | Fl.PV)));
+                        var reg = _registers[RIdx];
+                        _registers[AIdx] = reg;
+                        var f = (byte)(_registers[FIdx] & (~(byte)(Fl.H | Fl.PV | Fl.N | Fl.S | Fl.Z | Fl.PV)));
                         if (reg >= 0x80)
                         {
                             f |= (byte)Fl.S;
@@ -1747,7 +1746,7 @@ namespace z80
                         {
                             f |= (byte)Fl.PV;
                         }
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("LD A, R");
 #endif
@@ -1758,8 +1757,8 @@ namespace z80
                     {
                         // LD BC, (nn)
                         var addr = Fetch16();
-                        registers[C] = mem[addr++];
-                        registers[B] = mem[addr];
+                        _registers[CIdx] = mem[addr++];
+                        _registers[BIdx] = mem[addr];
 #if (DEBUG)
                         _logger.Log($"LD BC, (0x{--addr:X4})");
 #endif
@@ -1770,8 +1769,8 @@ namespace z80
                     {
                         // LD DE, (nn)
                         var addr = Fetch16();
-                        registers[E] = mem[addr++];
-                        registers[D] = mem[addr];
+                        _registers[EIdx] = mem[addr++];
+                        _registers[DIdx] = mem[addr];
 #if (DEBUG)
                         _logger.Log($"LD DE, (0x{--addr:X4})");
 #endif
@@ -1782,8 +1781,8 @@ namespace z80
                     {
                         // LD HL, (nn)
                         var addr = Fetch16();
-                        registers[L] = mem[addr++];
-                        registers[H] = mem[addr];
+                        _registers[LIdx] = mem[addr++];
+                        _registers[HIdx] = mem[addr];
 #if (DEBUG)
                         _logger.Log($"LD HL, (0x{--addr:X4})*");
 #endif
@@ -1794,8 +1793,8 @@ namespace z80
                     {
                         // LD SP, (nn)
                         var addr = Fetch16();
-                        registers[SP + 1] = mem[addr++];
-                        registers[SP] = mem[addr];
+                        _registers[SpIdx + 1] = mem[addr++];
+                        _registers[SpIdx] = mem[addr];
 #if (DEBUG)
                         _logger.Log($"LD SP, (0x{--addr:X4})");
 #endif
@@ -1806,8 +1805,8 @@ namespace z80
                     {
                         // LD (nn), BC
                         var addr = Fetch16();
-                        mem[addr++] = registers[C];
-                        mem[addr] = registers[B];
+                        mem[addr++] = _registers[CIdx];
+                        mem[addr] = _registers[BIdx];
 #if (DEBUG)
                         _logger.Log($"LD (0x{--addr:X4}), BC");
 #endif
@@ -1818,8 +1817,8 @@ namespace z80
                     {
                         // LD (nn), DE
                         var addr = Fetch16();
-                        mem[addr++] = registers[E];
-                        mem[addr] = registers[D];
+                        mem[addr++] = _registers[EIdx];
+                        mem[addr] = _registers[DIdx];
 #if (DEBUG)
                         _logger.Log($"LD (0x{--addr:X4}), DE");
 #endif
@@ -1830,8 +1829,8 @@ namespace z80
                     {
                         // LD (nn), HL
                         var addr = Fetch16();
-                        mem[addr++] = registers[L];
-                        mem[addr] = registers[H];
+                        mem[addr++] = _registers[LIdx];
+                        mem[addr] = _registers[HIdx];
 #if (DEBUG)
                         _logger.Log($"LD (0x{--addr:X4}), HL");
 #endif
@@ -1842,8 +1841,8 @@ namespace z80
                     {
                         // LD (nn), SP
                         var addr = Fetch16();
-                        mem[addr++] = registers[SP + 1];
-                        mem[addr] = registers[SP];
+                        mem[addr++] = _registers[SpIdx + 1];
+                        mem[addr] = _registers[SpIdx];
 #if (DEBUG)
                         _logger.Log($"LD (0x{--addr:X4}), SP");
 #endif
@@ -1862,16 +1861,16 @@ namespace z80
                         hl++;
                         bc--;
 
-                        registers[B] = (byte)(bc >> 8);
-                        registers[C] = (byte)(bc & 0xFF);
-                        registers[D] = (byte)(de >> 8);
-                        registers[E] = (byte)(de & 0xFF);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)(hl & 0xFF);
+                        _registers[BIdx] = (byte)(bc >> 8);
+                        _registers[CIdx] = (byte)(bc & 0xFF);
+                        _registers[DIdx] = (byte)(de >> 8);
+                        _registers[EIdx] = (byte)(de & 0xFF);
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)(hl & 0xFF);
 
-                        var f = (byte)(registers[F] & 0xE9);
+                        var f = (byte)(_registers[FIdx] & 0xE9);
                         if (bc != 0) f = (byte)(f | 0x04);
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("LDI");
 #endif
@@ -1890,21 +1889,21 @@ namespace z80
                         hl++;
                         bc--;
 
-                        registers[B] = (byte)(bc >> 8);
-                        registers[C] = (byte)(bc & 0xFF);
-                        registers[D] = (byte)(de >> 8);
-                        registers[E] = (byte)(de & 0xFF);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)(hl & 0xFF);
+                        _registers[BIdx] = (byte)(bc >> 8);
+                        _registers[CIdx] = (byte)(bc & 0xFF);
+                        _registers[DIdx] = (byte)(de >> 8);
+                        _registers[EIdx] = (byte)(de & 0xFF);
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)(hl & 0xFF);
 
-                        registers[F] = (byte)(registers[F] & 0xE9);
+                        _registers[FIdx] = (byte)(_registers[FIdx] & 0xE9);
                         if (bc != 0)
                         {
-                            var pc = (ushort)((registers[PC] << 8) + registers[PC + 1]);
+                            var pc = (ushort)((_registers[PcIdx] << 8) + _registers[PcIdx + 1]);
                             // jumps back to itself
                             pc -= 2;
-                            registers[PC] = (byte)(pc >> 8);
-                            registers[PC + 1] = (byte)(pc & 0xFF);
+                            _registers[PcIdx] = (byte)(pc >> 8);
+                            _registers[PcIdx + 1] = (byte)(pc & 0xFF);
                             Wait(21);
                             return;
                         }
@@ -1926,16 +1925,16 @@ namespace z80
                         hl--;
                         bc--;
 
-                        registers[B] = (byte)(bc >> 8);
-                        registers[C] = (byte)(bc & 0xFF);
-                        registers[D] = (byte)(de >> 8);
-                        registers[E] = (byte)(de & 0xFF);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)(hl & 0xFF);
+                        _registers[BIdx] = (byte)(bc >> 8);
+                        _registers[CIdx] = (byte)(bc & 0xFF);
+                        _registers[DIdx] = (byte)(de >> 8);
+                        _registers[EIdx] = (byte)(de & 0xFF);
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)(hl & 0xFF);
 
-                        var f = (byte)(registers[F] & 0xE9);
+                        var f = (byte)(_registers[FIdx] & 0xE9);
                         if (bc != 0) f = (byte)(f | 0x04);
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("LDD");
 #endif
@@ -1954,21 +1953,21 @@ namespace z80
                         hl--;
                         bc--;
 
-                        registers[B] = (byte)(bc >> 8);
-                        registers[C] = (byte)(bc & 0xFF);
-                        registers[D] = (byte)(de >> 8);
-                        registers[E] = (byte)(de & 0xFF);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)(hl & 0xFF);
+                        _registers[BIdx] = (byte)(bc >> 8);
+                        _registers[CIdx] = (byte)(bc & 0xFF);
+                        _registers[DIdx] = (byte)(de >> 8);
+                        _registers[EIdx] = (byte)(de & 0xFF);
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)(hl & 0xFF);
 
-                        registers[F] = (byte)(registers[F] & 0xE9);
+                        _registers[FIdx] = (byte)(_registers[FIdx] & 0xE9);
                         if (bc != 0)
                         {
-                            var pc = (ushort)((registers[PC] << 8) + registers[PC + 1]);
+                            var pc = (ushort)((_registers[PcIdx] << 8) + _registers[PcIdx + 1]);
                             // jumps back to itself
                             pc -= 2;
-                            registers[PC] = (byte)(pc >> 8);
-                            registers[PC + 1] = (byte)(pc & 0xFF);
+                            _registers[PcIdx] = (byte)(pc >> 8);
+                            _registers[PcIdx + 1] = (byte)(pc & 0xFF);
                             Wait(21);
                             return;
                         }
@@ -1985,22 +1984,22 @@ namespace z80
                         var bc = Bc;
                         var hl = Hl;
 
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var b = mem[hl];
                         hl++;
                         bc--;
 
-                        registers[B] = (byte)(bc >> 8);
-                        registers[C] = (byte)(bc & 0xFF);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)(hl & 0xFF);
+                        _registers[BIdx] = (byte)(bc >> 8);
+                        _registers[CIdx] = (byte)(bc & 0xFF);
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)(hl & 0xFF);
 
-                        var f = (byte)(registers[F] & 0x2A);
+                        var f = (byte)(_registers[FIdx] & 0x2A);
                         if (a < b) f = (byte)(f | 0x80);
                         if (a == b) f = (byte)(f | 0x40);
                         if ((a & 8) < (b & 8)) f = (byte)(f | 0x10);
                         if (bc != 0) f = (byte)(f | 0x04);
-                        registers[F] = (byte)(f | 0x02);
+                        _registers[FIdx] = (byte)(f | 0x02);
 #if (DEBUG)
                         _logger.Log("CPI");
 #endif
@@ -2014,24 +2013,24 @@ namespace z80
                         var bc = Bc;
                         var hl = Hl;
 
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var b = mem[hl];
                         hl++;
                         bc--;
 
-                        registers[B] = (byte)(bc >> 8);
-                        registers[C] = (byte)(bc & 0xFF);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)(hl & 0xFF);
+                        _registers[BIdx] = (byte)(bc >> 8);
+                        _registers[CIdx] = (byte)(bc & 0xFF);
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)(hl & 0xFF);
 
                         if (a == b || bc == 0)
                         {
-                            var f = (byte)(registers[F] & 0x2A);
+                            var f = (byte)(_registers[FIdx] & 0x2A);
                             if (a < b) f = (byte)(f | 0x80);
                             if (a == b) f = (byte)(f | 0x40);
                             if ((a & 8) < (b & 8)) f = (byte)(f | 0x10);
                             if (bc != 0) f = (byte)(f | 0x04);
-                            registers[F] = (byte)(f | 0x02);
+                            _registers[FIdx] = (byte)(f | 0x02);
 #if (DEBUG)
                             _logger.Log("CPIR");
 #endif
@@ -2039,11 +2038,11 @@ namespace z80
                             return;
                         }
 
-                        var pc = (ushort)((registers[PC] << 8) + registers[PC + 1]);
+                        var pc = (ushort)((_registers[PcIdx] << 8) + _registers[PcIdx + 1]);
                         // jumps back to itself
                         pc -= 2;
-                        registers[PC] = (byte)(pc >> 8);
-                        registers[PC + 1] = (byte)(pc & 0xFF);
+                        _registers[PcIdx] = (byte)(pc >> 8);
+                        _registers[PcIdx + 1] = (byte)(pc & 0xFF);
                         Wait(21);
                         return;
                     }
@@ -2054,22 +2053,22 @@ namespace z80
                         var bc = Bc;
                         var hl = Hl;
 
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var b = mem[hl];
                         hl--;
                         bc--;
 
-                        registers[B] = (byte)(bc >> 8);
-                        registers[C] = (byte)(bc & 0xFF);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)(hl & 0xFF);
+                        _registers[BIdx] = (byte)(bc >> 8);
+                        _registers[CIdx] = (byte)(bc & 0xFF);
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)(hl & 0xFF);
 
-                        var f = (byte)(registers[F] & 0x2A);
+                        var f = (byte)(_registers[FIdx] & 0x2A);
                         if (a < b) f = (byte)(f | 0x80);
                         if (a == b) f = (byte)(f | 0x40);
                         if ((a & 8) < (b & 8)) f = (byte)(f | 0x10);
                         if (bc != 0) f = (byte)(f | 0x04);
-                        registers[F] = (byte)(f | 0x02);
+                        _registers[FIdx] = (byte)(f | 0x02);
 #if (DEBUG)
                         _logger.Log("CPD");
 #endif
@@ -2083,24 +2082,24 @@ namespace z80
                         var bc = Bc;
                         var hl = Hl;
 
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var b = mem[hl];
                         hl--;
                         bc--;
 
-                        registers[B] = (byte)(bc >> 8);
-                        registers[C] = (byte)(bc & 0xFF);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)(hl & 0xFF);
+                        _registers[BIdx] = (byte)(bc >> 8);
+                        _registers[CIdx] = (byte)(bc & 0xFF);
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)(hl & 0xFF);
 
                         if (a == b || bc == 0)
                         {
-                            var f = (byte)(registers[F] & 0x2A);
+                            var f = (byte)(_registers[FIdx] & 0x2A);
                             if (a < b) f = (byte)(f | 0x80);
                             if (a == b) f = (byte)(f | 0x40);
                             if ((a & 8) < (b & 8)) f = (byte)(f | 0x10);
                             if (bc != 0) f = (byte)(f | 0x04);
-                            registers[F] = (byte)(f | 0x02);
+                            _registers[FIdx] = (byte)(f | 0x02);
 #if (DEBUG)
                             _logger.Log("CPDR");
 #endif
@@ -2108,11 +2107,11 @@ namespace z80
                             return;
                         }
 
-                        var pc = (ushort)((registers[PC] << 8) + registers[PC + 1]);
+                        var pc = (ushort)((_registers[PcIdx] << 8) + _registers[PcIdx + 1]);
                         // jumps back to itself
                         pc -= 2;
-                        registers[PC] = (byte)(pc >> 8);
-                        registers[PC + 1] = (byte)(pc & 0xFF);
+                        _registers[PcIdx] = (byte)(pc >> 8);
+                        _registers[PcIdx + 1] = (byte)(pc & 0xFF);
                         Wait(21);
                         return;
                     }
@@ -2126,18 +2125,18 @@ namespace z80
                 case 0x7C:
                     {
                         // NEG
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var diff = -a;
-                        registers[A] = (byte)diff;
+                        _registers[AIdx] = (byte)diff;
 
-                        var f = (byte)(registers[F] & 0x28);
+                        var f = (byte)(_registers[FIdx] & 0x28);
                         if ((diff & 0x80) > 0) f |= (byte)Fl.S;
                         if (diff == 0) f |= (byte)Fl.Z;
                         if ((a & 0xF) != 0) f |= (byte)Fl.H;
                         if (a == 0x80) f |= (byte)Fl.PV;
                         f |= (byte)Fl.N;
                         if (diff != 0) f |= (byte)Fl.C;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 
 
 #if (DEBUG)
@@ -2256,16 +2255,16 @@ namespace z80
 
                 case 0x6F:
                     {
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var b = mem[Hl];
                         mem[Hl] = (byte)((b << 4) | (a & 0x0F));
                         a = (byte)((a & 0xF0) | (b >> 4));
-                        registers[A] = a;
-                        var f = (byte)(registers[F] & 0x29);
+                        _registers[AIdx] = a;
+                        var f = (byte)(_registers[FIdx] & 0x29);
                         if ((a & 0x80) > 0) f |= (byte)Fl.S;
                         if (a == 0) f |= (byte)Fl.Z;
                         if (Parity(a)) f |= (byte)Fl.PV;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("RLD");
 #endif
@@ -2274,16 +2273,16 @@ namespace z80
                     }
                 case 0x67:
                     {
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         var b = mem[Hl];
                         mem[Hl] = (byte)((b >> 4) | (a << 4));
                         a = (byte)((a & 0xF0) | (b & 0x0F));
-                        registers[A] = a;
-                        var f = (byte)(registers[F] & 0x29);
+                        _registers[AIdx] = a;
+                        var f = (byte)(_registers[FIdx] & 0x29);
                         if ((a & 0x80) > 0) f |= (byte)Fl.S;
                         if (a == 0) f |= (byte)Fl.Z;
                         if (Parity(a)) f |= (byte)Fl.PV;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("RRD");
 #endif
@@ -2300,10 +2299,10 @@ namespace z80
                 case 0x7D:
                     {
                         var stack = Sp;
-                        registers[PC + 1] = mem[stack++];
-                        registers[PC] = mem[stack++];
-                        registers[SP] = (byte)(stack >> 8);
-                        registers[SP + 1] = (byte)(stack);
+                        _registers[PcIdx + 1] = mem[stack++];
+                        _registers[PcIdx] = mem[stack++];
+                        _registers[SpIdx] = (byte)(stack >> 8);
+                        _registers[SpIdx + 1] = (byte)(stack);
                         IFF1 = IFF2;
 #if (DEBUG)
                         if (mc == 0x4D)
@@ -2333,12 +2332,12 @@ namespace z80
                 case 0x78:
                     {
                         var a = ports.ReadPort(Bc);
-                        registers[r] = a;
-                        var f = (byte)(registers[F] & 0x29);
+                        _registers[r] = a;
+                        var f = (byte)(_registers[FIdx] & 0x29);
                         if ((a & 0x80) > 0) f |= (byte)Fl.S;
                         if (a == 0) f |= (byte)Fl.Z;
                         if (Parity(a)) f |= (byte)Fl.PV;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log($"IN {_logger.RName(r)}, (BC)");
 #endif
@@ -2350,14 +2349,14 @@ namespace z80
                         var a = ports.ReadPort(Bc);
                         var hl = Hl;
                         mem[hl++] = a;
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)hl;
-                        var b = (byte)(registers[B] - 1);
-                        registers[B] = b;
-                        var f = (byte)(registers[F] & (byte)~(Fl.N | Fl.Z));
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)hl;
+                        var b = (byte)(_registers[BIdx] - 1);
+                        _registers[BIdx] = b;
+                        var f = (byte)(_registers[FIdx] & (byte)~(Fl.N | Fl.Z));
                         if (b == 0) f |= (byte)Fl.Z;
                         f |= (byte)Fl.N;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 
 #if (DEBUG)
                         _logger.Log("INI");
@@ -2370,15 +2369,15 @@ namespace z80
                         var a = ports.ReadPort(Bc);
                         var hl = Hl;
                         mem[hl++] = a;
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)hl;
-                        var b = (byte)(registers[B] - 1);
-                        registers[B] = b;
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)hl;
+                        var b = (byte)(_registers[BIdx] - 1);
+                        _registers[BIdx] = b;
                         if (b != 0)
                         {
                             var pc = Pc - 2;
-                            registers[PC] = (byte)(pc >> 8);
-                            registers[PC + 1] = (byte)pc;
+                            _registers[PcIdx] = (byte)(pc >> 8);
+                            _registers[PcIdx + 1] = (byte)pc;
 #if (DEBUG)
                             _logger.Log("(INIR)");
 #endif
@@ -2386,7 +2385,7 @@ namespace z80
                         }
                         else
                         {
-                            registers[F] = (byte)(registers[F] | (byte)(Fl.N | Fl.Z));
+                            _registers[FIdx] = (byte)(_registers[FIdx] | (byte)(Fl.N | Fl.Z));
 #if (DEBUG)
                             _logger.Log("INIR");
 #endif
@@ -2399,14 +2398,14 @@ namespace z80
                         var a = ports.ReadPort(Bc);
                         var hl = Hl;
                         mem[hl--] = a;
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)hl;
-                        var b = (byte)(registers[B] - 1);
-                        registers[B] = b;
-                        var f = (byte)(registers[F] & (byte)~(Fl.N | Fl.Z));
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)hl;
+                        var b = (byte)(_registers[BIdx] - 1);
+                        _registers[BIdx] = b;
+                        var f = (byte)(_registers[FIdx] & (byte)~(Fl.N | Fl.Z));
                         if (b == 0) f |= (byte)Fl.Z;
                         f |= (byte)Fl.N;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("IND");
 #endif
@@ -2418,15 +2417,15 @@ namespace z80
                         var a = ports.ReadPort(Bc);
                         var hl = Hl;
                         mem[hl--] = a;
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)hl;
-                        var b = (byte)(registers[B] - 1);
-                        registers[B] = b;
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)hl;
+                        var b = (byte)(_registers[BIdx] - 1);
+                        _registers[BIdx] = b;
                         if (b != 0)
                         {
                             var pc = Pc - 2;
-                            registers[PC] = (byte)(pc >> 8);
-                            registers[PC + 1] = (byte)pc;
+                            _registers[PcIdx] = (byte)(pc >> 8);
+                            _registers[PcIdx + 1] = (byte)pc;
 #if (DEBUG)
                             _logger.Log("(INDR)");
 #endif
@@ -2434,7 +2433,7 @@ namespace z80
                         }
                         else
                         {
-                            registers[F] = (byte)(registers[F] | (byte)(Fl.N | Fl.Z));
+                            _registers[FIdx] = (byte)(_registers[FIdx] | (byte)(Fl.N | Fl.Z));
 #if (DEBUG)
                             _logger.Log("INDR");
 #endif
@@ -2450,13 +2449,13 @@ namespace z80
                 case 0x69:
                 case 0x79:
                     {
-                        var a = registers[r];
+                        var a = _registers[r];
                         ports.WritePort(Bc, a);
-                        var f = (byte)(registers[F] & 0x29);
+                        var f = (byte)(_registers[FIdx] & 0x29);
                         if ((a & 0x80) > 0) f |= (byte)Fl.S;
                         if (a == 0) f |= (byte)Fl.Z;
                         if (Parity(a)) f |= (byte)Fl.PV;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log($"OUT (BC), {_logger.RName(r)}");
 #endif
@@ -2468,14 +2467,14 @@ namespace z80
                         var hl = Hl;
                         var a = mem[hl++];
                         ports.WritePort(Bc, a);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)hl;
-                        var b = (byte)(registers[B] - 1);
-                        registers[B] = b;
-                        var f = (byte)(registers[F] & (byte)~(Fl.N | Fl.Z));
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)hl;
+                        var b = (byte)(_registers[BIdx] - 1);
+                        _registers[BIdx] = b;
+                        var f = (byte)(_registers[FIdx] & (byte)~(Fl.N | Fl.Z));
                         if (b == 0) f |= (byte)Fl.Z;
                         f |= (byte)Fl.N;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 
 #if (DEBUG)
                         _logger.Log("OUTI");
@@ -2488,15 +2487,15 @@ namespace z80
                         var hl = Hl;
                         var a = mem[hl++];
                         ports.WritePort(Bc, a);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)hl;
-                        var b = (byte)(registers[B] - 1);
-                        registers[B] = b;
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)hl;
+                        var b = (byte)(_registers[BIdx] - 1);
+                        _registers[BIdx] = b;
                         if (b != 0)
                         {
                             var pc = Pc - 2;
-                            registers[PC] = (byte)(pc >> 8);
-                            registers[PC + 1] = (byte)pc;
+                            _registers[PcIdx] = (byte)(pc >> 8);
+                            _registers[PcIdx + 1] = (byte)pc;
 #if (DEBUG)
                             _logger.Log("(OUTIR)");
 #endif
@@ -2504,7 +2503,7 @@ namespace z80
                         }
                         else
                         {
-                            registers[F] = (byte)(registers[F] | (byte)(Fl.N | Fl.Z));
+                            _registers[FIdx] = (byte)(_registers[FIdx] | (byte)(Fl.N | Fl.Z));
 #if (DEBUG)
                             _logger.Log("OUTIR");
 #endif
@@ -2517,14 +2516,14 @@ namespace z80
                         var hl = Hl;
                         var a = mem[hl--];
                         ports.WritePort(Bc, a);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)hl;
-                        var b = (byte)(registers[B] - 1);
-                        registers[B] = b;
-                        var f = (byte)(registers[F] & (byte)~(Fl.N | Fl.Z));
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)hl;
+                        var b = (byte)(_registers[BIdx] - 1);
+                        _registers[BIdx] = b;
+                        var f = (byte)(_registers[FIdx] & (byte)~(Fl.N | Fl.Z));
                         if (b == 0) f |= (byte)Fl.Z;
                         f |= (byte)Fl.N;
-                        registers[F] = f;
+                        _registers[FIdx] = f;
 #if (DEBUG)
                         _logger.Log("OUTD");
 #endif
@@ -2536,15 +2535,15 @@ namespace z80
                         var hl = Hl;
                         var a = mem[hl--];
                         ports.WritePort(Bc, a);
-                        registers[H] = (byte)(hl >> 8);
-                        registers[L] = (byte)hl;
-                        var b = (byte)(registers[B] - 1);
-                        registers[B] = b;
+                        _registers[HIdx] = (byte)(hl >> 8);
+                        _registers[LIdx] = (byte)hl;
+                        var b = (byte)(_registers[BIdx] - 1);
+                        _registers[BIdx] = b;
                         if (b != 0)
                         {
                             var pc = Pc - 2;
-                            registers[PC] = (byte)(pc >> 8);
-                            registers[PC + 1] = (byte)pc;
+                            _registers[PcIdx] = (byte)(pc >> 8);
+                            _registers[PcIdx + 1] = (byte)pc;
 #if (DEBUG)
                             _logger.Log("(OUTDR)");
 #endif
@@ -2552,7 +2551,7 @@ namespace z80
                         }
                         else
                         {
-                            registers[F] = (byte)(registers[F] | (byte)(Fl.N | Fl.Z));
+                            _registers[FIdx] = (byte)(_registers[FIdx] | (byte)(Fl.N | Fl.Z));
 #if (DEBUG)
                             _logger.Log("OUTDR");
 #endif
@@ -2585,8 +2584,8 @@ namespace z80
                 case 0x21:
                     {
                         // LD IX, nn
-                        registers[IX + 1] = Fetch();
-                        registers[IX] = Fetch();
+                        _registers[IxIdx + 1] = Fetch();
+                        _registers[IxIdx] = Fetch();
 #if (DEBUG)
                         _logger.Log($"LD IX, 0x{Ix:X4}");
 #endif
@@ -2603,7 +2602,7 @@ namespace z80
                     {
                         // LD r, (IX+d)
                         var d = (sbyte)Fetch();
-                        registers[mid] = mem[(ushort)(Ix + d)];
+                        _registers[mid] = mem[(ushort)(Ix + d)];
 #if (DEBUG)
                         _logger.Log($"LD {_logger.RName(mid)}, (IX{d:+0;-#})");
 #endif
@@ -2620,7 +2619,7 @@ namespace z80
                     {
                         // LD (IX+d), r
                         var d = (sbyte)Fetch();
-                        mem[(ushort)(Ix + d)] = registers[lo];
+                        mem[(ushort)(Ix + d)] = _registers[lo];
 #if (DEBUG)
                         _logger.Log($"LD (IX{d:+0;-#}), {_logger.RName(lo)}");
 #endif
@@ -2643,8 +2642,8 @@ namespace z80
                     {
                         // LD IX, (nn)
                         var addr = Fetch16();
-                        registers[IX + 1] = mem[addr++];
-                        registers[IX] = mem[addr];
+                        _registers[IxIdx + 1] = mem[addr++];
+                        _registers[IxIdx] = mem[addr];
 #if (DEBUG)
                         _logger.Log($"LD IX, (0x{addr:X4})*");
 #endif
@@ -2655,8 +2654,8 @@ namespace z80
                     {
                         // LD (nn), IX
                         var addr = Fetch16();
-                        mem[addr++] = registers[IX + 1];
-                        mem[addr] = registers[IX];
+                        mem[addr++] = _registers[IxIdx + 1];
+                        mem[addr] = _registers[IxIdx];
 #if (DEBUG)
                         _logger.Log($"LD (0x{addr:X4}), IX");
 #endif
@@ -2667,8 +2666,8 @@ namespace z80
                 case 0xF9:
                     {
                         // LD SP, IX
-                        registers[SP] = registers[IX];
-                        registers[SP + 1] = registers[IX + 1];
+                        _registers[SpIdx] = _registers[IxIdx];
+                        _registers[SpIdx + 1] = _registers[IxIdx + 1];
 #if (DEBUG)
                         _logger.Log("LD SP, IX");
 #endif
@@ -2680,11 +2679,11 @@ namespace z80
                         // PUSH IX
                         var addr = Sp;
                         addr--;
-                        mem[addr] = registers[IX];
+                        mem[addr] = _registers[IxIdx];
                         addr--;
-                        mem[addr] = registers[IX + 1];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        mem[addr] = _registers[IxIdx + 1];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("PUSH IX");
 #endif
@@ -2695,10 +2694,10 @@ namespace z80
                     {
                         // POP IX
                         var addr = Sp;
-                        registers[IX + 1] = mem[addr++];
-                        registers[IX] = mem[addr++];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        _registers[IxIdx + 1] = mem[addr++];
+                        _registers[IxIdx] = mem[addr++];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("POP IX");
 #endif
@@ -2708,11 +2707,11 @@ namespace z80
                 case 0xE3:
                     {
                         // EX (SP), IX
-                        var h = registers[IX];
-                        var l = registers[IX + 1];
+                        var h = _registers[IxIdx];
+                        var l = _registers[IxIdx + 1];
                         var addr = Sp;
-                        registers[IX + 1] = mem[addr++];
-                        registers[IX] = mem[addr];
+                        _registers[IxIdx + 1] = mem[addr++];
+                        _registers[IxIdx] = mem[addr];
                         mem[addr--] = h;
                         mem[addr] = l;
 
@@ -2739,7 +2738,7 @@ namespace z80
                     {
                         // ADC A, (IX+d)
                         var d = (sbyte)Fetch();
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         Adc(mem[(ushort)(Ix + d)]);
 #if (DEBUG)
                         _logger.Log($"ADC A, (IX{d:+0;-#})");
@@ -2885,8 +2884,8 @@ namespace z80
                 case 0x23:
                     {
                         var val = Ix + 1;
-                        registers[IX] = (byte)(val >> 8);
-                        registers[IX + 1] = (byte)(val & 0xFF);
+                        _registers[IxIdx] = (byte)(val >> 8);
+                        _registers[IxIdx + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("INC IX");
 #endif
@@ -2896,8 +2895,8 @@ namespace z80
                 case 0x2B:
                     {
                         var val = Ix - 1;
-                        registers[IX] = (byte)(val >> 8);
-                        registers[IX + 1] = (byte)(val & 0xFF);
+                        _registers[IxIdx] = (byte)(val >> 8);
+                        _registers[IxIdx + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("DEC IX");
 #endif
@@ -2907,8 +2906,8 @@ namespace z80
                 case 0xE9:
                     {
                         var addr = Ix;
-                        registers[PC] = (byte)(addr >> 8);
-                        registers[PC + 1] = (byte)(addr);
+                        _registers[PcIdx] = (byte)(addr >> 8);
+                        _registers[PcIdx + 1] = (byte)(addr);
 #if (DEBUG)
                         _logger.Log("JP IX");
 #endif
@@ -2941,8 +2940,8 @@ namespace z80
                 case 0x21:
                     {
                         // LD IY, nn
-                        registers[IY + 1] = Fetch();
-                        registers[IY] = Fetch();
+                        _registers[IyIdx + 1] = Fetch();
+                        _registers[IyIdx] = Fetch();
 #if (DEBUG)
                         _logger.Log($"LD IY, 0x{Iy:X4}");
 #endif
@@ -2960,7 +2959,7 @@ namespace z80
                     {
                         // LD r, (IY+d)
                         var d = (sbyte)Fetch();
-                        registers[r] = mem[(ushort)(Iy + d)];
+                        _registers[r] = mem[(ushort)(Iy + d)];
 #if (DEBUG)
                         _logger.Log($"LD {_logger.RName(r)}, (IY{d:+0;-#})");
 #endif
@@ -2977,7 +2976,7 @@ namespace z80
                     {
                         // LD (IY+d), r
                         var d = (sbyte)Fetch();
-                        mem[(ushort)(Iy + d)] = registers[lo];
+                        mem[(ushort)(Iy + d)] = _registers[lo];
 #if (DEBUG)
                         _logger.Log($"LD (IY{d:+0;-#}), {_logger.RName(lo)}");
 #endif
@@ -3000,8 +2999,8 @@ namespace z80
                     {
                         // LD IY, (nn)
                         var addr = Fetch16();
-                        registers[IY + 1] = mem[addr++];
-                        registers[IY] = mem[addr];
+                        _registers[IyIdx + 1] = mem[addr++];
+                        _registers[IyIdx] = mem[addr];
 #if (DEBUG)
                         _logger.Log($"LD IY, (0x{--addr:X4})*");
 #endif
@@ -3013,8 +3012,8 @@ namespace z80
                     {
                         // LD (nn), IY
                         var addr = Fetch16();
-                        mem[addr++] = registers[IY + 1];
-                        mem[addr] = registers[IY];
+                        mem[addr++] = _registers[IyIdx + 1];
+                        mem[addr] = _registers[IyIdx];
 #if (DEBUG)
                         _logger.Log($"LD (0x{--addr:X4}), IY");
 #endif
@@ -3024,8 +3023,8 @@ namespace z80
                 case 0xF9:
                     {
                         // LD SP, IY
-                        registers[SP] = registers[IY];
-                        registers[SP + 1] = registers[IY + 1];
+                        _registers[SpIdx] = _registers[IyIdx];
+                        _registers[SpIdx + 1] = _registers[IyIdx + 1];
 #if (DEBUG)
                         _logger.Log("LD SP, IY");
 #endif
@@ -3036,10 +3035,10 @@ namespace z80
                     {
                         // PUSH IY
                         var addr = Sp;
-                        mem[--addr] = registers[IY];
-                        mem[--addr] = registers[IY + 1];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        mem[--addr] = _registers[IyIdx];
+                        mem[--addr] = _registers[IyIdx + 1];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("PUSH IY");
 #endif
@@ -3050,10 +3049,10 @@ namespace z80
                     {
                         // POP IY
                         var addr = Sp;
-                        registers[IY + 1] = mem[addr++];
-                        registers[IY] = mem[addr++];
-                        registers[SP + 1] = (byte)(addr & 0xFF);
-                        registers[SP] = (byte)(addr >> 8);
+                        _registers[IyIdx + 1] = mem[addr++];
+                        _registers[IyIdx] = mem[addr++];
+                        _registers[SpIdx + 1] = (byte)(addr & 0xFF);
+                        _registers[SpIdx] = (byte)(addr >> 8);
 #if (DEBUG)
                         _logger.Log("POP IY");
 #endif
@@ -3063,12 +3062,12 @@ namespace z80
                 case 0xE3:
                     {
                         // EX (SP), IY
-                        var h = registers[IY];
-                        var l = registers[IY + 1];
+                        var h = _registers[IyIdx];
+                        var l = _registers[IyIdx + 1];
                         var addr = Sp;
-                        registers[IY + 1] = mem[addr];
+                        _registers[IyIdx + 1] = mem[addr];
                         mem[addr++] = l;
-                        registers[IY] = mem[addr];
+                        _registers[IyIdx] = mem[addr];
                         mem[addr] = h;
 
 #if (DEBUG)
@@ -3093,7 +3092,7 @@ namespace z80
                     {
                         // ADC A, (IY+d)
                         var d = (sbyte)Fetch();
-                        var a = registers[A];
+                        var a = _registers[AIdx];
                         Adc(mem[(ushort)(Iy + d)]);
 #if (DEBUG)
                         _logger.Log($"ADC A, (IY{d:+0;-#})");
@@ -3237,8 +3236,8 @@ namespace z80
                 case 0x23:
                     {
                         var val = Iy + 1;
-                        registers[IY] = (byte)(val >> 8);
-                        registers[IY + 1] = (byte)(val & 0xFF);
+                        _registers[IyIdx] = (byte)(val >> 8);
+                        _registers[IyIdx + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("INC IY");
 #endif
@@ -3248,8 +3247,8 @@ namespace z80
                 case 0x2B:
                     {
                         var val = Iy - 1;
-                        registers[IY] = (byte)(val >> 8);
-                        registers[IY + 1] = (byte)(val & 0xFF);
+                        _registers[IyIdx] = (byte)(val >> 8);
+                        _registers[IyIdx + 1] = (byte)(val & 0xFF);
 #if (DEBUG)
                         _logger.Log("DEC IY");
 #endif
@@ -3259,8 +3258,8 @@ namespace z80
                 case 0xE9:
                     {
                         var addr = Iy;
-                        registers[PC] = (byte)(addr >> 8);
-                        registers[PC + 1] = (byte)(addr);
+                        _registers[PcIdx] = (byte)(addr >> 8);
+                        _registers[PcIdx + 1] = (byte)(addr);
 #if (DEBUG)
                         _logger.Log("JP IY");
 #endif
@@ -3276,10 +3275,10 @@ namespace z80
 
         private void Add(byte b)
         {
-            var a = registers[A];
+            var a = _registers[AIdx];
             var sum = a + b;
-            registers[A] = (byte)sum;
-            var f = (byte)(registers[F] & 0x28);
+            _registers[AIdx] = (byte)sum;
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((sum & 0x80) > 0)
                 f |= (byte)Fl.S;
             if ((byte)sum == 0)
@@ -3290,16 +3289,16 @@ namespace z80
                 f |= (byte)Fl.PV;
             if (sum > 0xFF)
                 f |= (byte)Fl.C;
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private void Adc(byte b)
         {
-            var a = registers[A];
-            var c = (byte)(registers[F] & (byte)Fl.C);
+            var a = _registers[AIdx];
+            var c = (byte)(_registers[FIdx] & (byte)Fl.C);
             var sum = a + b + c;
-            registers[A] = (byte)sum;
-            var f = (byte)(registers[F] & 0x28);
+            _registers[AIdx] = (byte)sum;
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((sum & 0x80) > 0)
                 f |= (byte)Fl.S;
             if ((byte)sum == 0)
@@ -3310,15 +3309,15 @@ namespace z80
                 f |= (byte)Fl.PV;
             f = (byte)(f & ~(byte)Fl.N);
             if (sum > 0xFF) f |= (byte)Fl.C;
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private void Sub(byte b)
         {
-            var a = registers[A];
+            var a = _registers[AIdx];
             var diff = a - b;
-            registers[A] = (byte)diff;
-            var f = (byte)(registers[F] & 0x28);
+            _registers[AIdx] = (byte)diff;
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((diff & 0x80) > 0)
                 f |= (byte)Fl.S;
             if (diff == 0)
@@ -3330,16 +3329,16 @@ namespace z80
             f |= (byte)Fl.N;
             if (diff < 0)
                 f |= (byte)Fl.C;
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private void Sbc(byte b)
         {
-            var a = registers[A];
-            var c = (byte)(registers[F] & 0x01);
+            var a = _registers[AIdx];
+            var c = (byte)(_registers[FIdx] & 0x01);
             var diff = a - b - c;
-            registers[A] = (byte)diff;
-            var f = (byte)(registers[F] & 0x28);
+            _registers[AIdx] = (byte)diff;
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((diff & 0x80) > 0) f |= (byte)Fl.S;
             if (diff == 0) f |= (byte)Fl.Z;
             if ((a & 0xF) < (b & 0xF) + c) f |= (byte)Fl.H;
@@ -3347,57 +3346,57 @@ namespace z80
                 f |= (byte)Fl.PV;
             f |= (byte)Fl.N;
             if (diff > 0xFF) f |= (byte)Fl.C;
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private void And(byte b)
         {
-            var a = registers[A];
+            var a = _registers[AIdx];
             var res = (byte)(a & b);
-            registers[A] = res;
-            var f = (byte)(registers[F] & 0x28);
+            _registers[AIdx] = res;
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((res & 0x80) > 0) f |= (byte)Fl.S;
             if (res == 0) f |= (byte)Fl.Z;
             f |= (byte)Fl.H;
             if (Parity(res)) f |= (byte)Fl.PV;
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private void Or(byte b)
         {
-            var a = registers[A];
+            var a = _registers[AIdx];
             var res = (byte)(a | b);
-            registers[A] = res;
-            var f = (byte)(registers[F] & 0x28);
+            _registers[AIdx] = res;
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((res & 0x80) > 0)
                 f |= (byte)Fl.S;
             if (res == 0)
                 f |= (byte)Fl.Z;
             if (Parity(res))
                 f |= (byte)Fl.PV;
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private void Xor(byte b)
         {
-            var a = registers[A];
+            var a = _registers[AIdx];
             var res = (byte)(a ^ b);
-            registers[A] = res;
-            var f = (byte)(registers[F] & 0x28);
+            _registers[AIdx] = res;
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((res & 0x80) > 0)
                 f |= (byte)Fl.S;
             if (res == 0)
                 f |= (byte)Fl.Z;
             if (Parity(res))
                 f |= (byte)Fl.PV;
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private void Cmp(byte b)
         {
-            var a = registers[A];
+            var a = _registers[AIdx];
             var diff = a - b;
-            var f = (byte)(registers[F] & 0x28);
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((diff & 0x80) > 0)
                 f = (byte)(f | 0x80);
             if (diff == 0)
@@ -3409,13 +3408,13 @@ namespace z80
             f = (byte)(f | 0x02);
             if (diff > 0xFF)
                 f = (byte)(f | 0x01);
-            registers[F] = f;
+            _registers[FIdx] = f;
         }
 
         private byte Inc(byte b)
         {
             var sum = b + 1;
-            var f = (byte)(registers[F] & 0x28);
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((sum & 0x80) > 0)
                 f = (byte)(f | 0x80);
             if (sum == 0)
@@ -3426,7 +3425,7 @@ namespace z80
                 f = (byte)(f | 0x04);
             f = (byte)(f | 0x02);
             if (sum > 0xFF) f = (byte)(f | 0x01);
-            registers[F] = f;
+            _registers[FIdx] = f;
 
             return (byte)sum;
         }
@@ -3434,7 +3433,7 @@ namespace z80
         private byte Dec(byte b)
         {
             var sum = b - 1;
-            var f = (byte)(registers[F] & 0x28);
+            var f = (byte)(_registers[FIdx] & 0x28);
             if ((sum & 0x80) > 0)
                 f = (byte)(f | 0x80);
             if (sum == 0)
@@ -3444,7 +3443,7 @@ namespace z80
             if (b == 0x80)
                 f = (byte)(f | 0x04);
             f = (byte)(f | 0x02);
-            registers[F] = f;
+            _registers[FIdx] = f;
 
             return (byte)sum;
         }
@@ -3480,7 +3479,7 @@ namespace z80
                 default:
                     return false;
             }
-            return ((registers[F] & (byte)mask) > 0) == ((condition & 1) == 1);
+            return ((_registers[FIdx] & (byte)mask) > 0) == ((condition & 1) == 1);
 
         }
 
@@ -3496,8 +3495,8 @@ namespace z80
             _logger.LogMemRead(pc, ret);
 #endif
             pc++;
-            registers[PC] = (byte)(pc >> 8);
-            registers[PC + 1] = (byte)(pc & 0xFF);
+            _registers[PcIdx] = (byte)(pc >> 8);
+            _registers[PcIdx + 1] = (byte)(pc & 0xFF);
             return ret;
         }
 
@@ -3508,12 +3507,12 @@ namespace z80
 
         public void Reset()
         {
-            Array.Clear(registers, 0, registers.Length);
+            Array.Clear(_registers, 0, _registers.Length);
 
-            registers[A] = 0xFF;
-            registers[F] = 0xFF;
-            registers[SP] = 0xFF;
-            registers[SP + 1] = 0xFF;
+            _registers[AIdx] = 0xFF;
+            _registers[FIdx] = 0xFF;
+            _registers[SpIdx] = 0xFF;
+            _registers[SpIdx + 1] = 0xFF;
 
             //A CPU reset forces both the IFF1 and IFF2 to the reset state, which disables interrupts
             IFF1 = false;
@@ -3524,9 +3523,9 @@ namespace z80
 
         public byte[] GetState()
         {
-            var length = registers.Length;
+            var length = _registers.Length;
             var ret = new byte[length + 2];
-            Array.Copy(registers, ret, length);
+            Array.Copy(_registers, ret, length);
             ret[length] = (byte)(IFF1 ? 1 : 0);
             ret[length + 1] = (byte)(IFF2 ? 1 : 0);
             return ret;
@@ -3536,12 +3535,12 @@ namespace z80
         {
             var ret = " BC   DE   HL  SZ-H-PNC A" + Environment.NewLine;
             ret +=
-                $"{registers[B]:X2}{registers[C]:X2} {registers[D]:X2}{registers[E]:X2} {registers[H]:X2}{registers[L]:X2} {(registers[F] & 0x80) >> 7}{(registers[F] & 0x40) >> 6}{(registers[F] & 0x20) >> 5}{(registers[F] & 0x10) >> 4}{(registers[F] & 0x08) >> 3}{(registers[F] & 0x04) >> 2}{(registers[F] & 0x02) >> 1}{(registers[F] & 0x01)} {registers[A]:X2}";
+                $"{_registers[BIdx]:X2}{_registers[CIdx]:X2} {_registers[DIdx]:X2}{_registers[EIdx]:X2} {_registers[HIdx]:X2}{_registers[LIdx]:X2} {(_registers[FIdx] & 0x80) >> 7}{(_registers[FIdx] & 0x40) >> 6}{(_registers[FIdx] & 0x20) >> 5}{(_registers[FIdx] & 0x10) >> 4}{(_registers[FIdx] & 0x08) >> 3}{(_registers[FIdx] & 0x04) >> 2}{(_registers[FIdx] & 0x02) >> 1}{(_registers[FIdx] & 0x01)} {_registers[AIdx]:X2}";
             ret +=
-                $"\n{registers[Bp]:X2}{registers[Cp]:X2} {registers[Dp]:X2}{registers[Ep]:X2} {registers[Hp]:X2}{registers[Lp]:X2} {(registers[Fp] & 0x80) >> 7}{(registers[Fp] & 0x40) >> 6}{(registers[Fp] & 0x20) >> 5}{(registers[Fp] & 0x10) >> 4}{(registers[Fp] & 0x08) >> 3}{(registers[Fp] & 0x04) >> 2}{(registers[Fp] & 0x02) >> 1}{registers[Fp] & 0x01} {registers[Ap]:X2}";
+                $"\n{_registers[BpIdx]:X2}{_registers[CpIdx]:X2} {_registers[DpIdx]:X2}{_registers[EpIdx]:X2} {_registers[HpIdx]:X2}{_registers[LpIdx]:X2} {(_registers[FpIdx] & 0x80) >> 7}{(_registers[FpIdx] & 0x40) >> 6}{(_registers[FpIdx] & 0x20) >> 5}{(_registers[FpIdx] & 0x10) >> 4}{(_registers[FpIdx] & 0x08) >> 3}{(_registers[FpIdx] & 0x04) >> 2}{(_registers[FpIdx] & 0x02) >> 1}{_registers[FpIdx] & 0x01} {_registers[ApIdx]:X2}";
             ret += Environment.NewLine + Environment.NewLine + "I  R   IX   IY   SP   PC" + Environment.NewLine;
             ret +=
-                $"{registers[I]:X2} {registers[R]:X2} {registers[IX]:X2}{registers[IX + 1]:X2} {registers[IY]:X2}{registers[IY + 1]:X2} {registers[SP]:X2}{registers[SP + 1]:X2} {registers[PC]:X2}{registers[PC + 1]:X2} ";
+                $"{_registers[IIdx]:X2} {_registers[RIdx]:X2} {_registers[IxIdx]:X2}{_registers[IxIdx + 1]:X2} {_registers[IyIdx]:X2}{_registers[IyIdx + 1]:X2} {_registers[SpIdx]:X2}{_registers[SpIdx + 1]:X2} {_registers[PcIdx]:X2}{_registers[PcIdx + 1]:X2} ";
 
             ret += Environment.NewLine;
             return ret;
@@ -3549,7 +3548,7 @@ namespace z80
 
         private void Wait(int t)
         {
-            registers[R] += (byte)((t + 3) / 4);
+            _registers[RIdx] += (byte)((t + 3) / 4);
             const int realTicksPerTick = 250; // 4MHz
             var ticks = t * realTicksPerTick;
             var elapsed = (DateTime.UtcNow - _clock).Ticks;
@@ -3570,9 +3569,9 @@ namespace z80
 
         private void SwapReg8(byte r1, byte r2)
         {
-            var t = registers[r1];
-            registers[r1] = registers[r2];
-            registers[r2] = t;
+            var t = _registers[r1];
+            _registers[r1] = _registers[r2];
+            _registers[r2] = t;
         }
 
         [Flags]
