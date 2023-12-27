@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\z80\z80.csproj" />
     <ProjectReference Include="..\Shared\WebFrontEnd.Shared.csproj" />
   </ItemGroup>
 

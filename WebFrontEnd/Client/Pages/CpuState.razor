@@ -1,0 +1,41 @@
+﻿@page "/cpustate"
+@using Microsoft.AspNetCore.Components
+@using z80
+
+<h1>CPU State</h1>
+@if (_cpu == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Reg</th>
+				<th>Value</th>
+				<th>Alt.</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr><td>A</td><td>@_cpu.A</td><td>@_cpu.Ap</td></tr>
+			<tr><td>B</td><td>@_cpu.B</td><td>@_cpu.Bp</td></tr>
+			<tr><td>C</td><td>@_cpu.C</td><td>@_cpu.Cp</td></tr>
+			<tr><td>D</td><td>@_cpu.D</td><td>@_cpu.Dp</td></tr>
+			<tr><td>E</td><td>@_cpu.E</td><td>@_cpu.Ep</td></tr>
+			<tr><td>H</td><td>@_cpu.H</td><td>@_cpu.Hp</td></tr>
+			<tr><td>L</td><td>@_cpu.L</td><td>@_cpu.Lp</td></tr>
+		</tbody>
+	</table>
+
+	<button>Step</button>
+}
+
+
+
+
+@code {
+	private static byte[] _ram = new byte[65536];
+	private readonly Z80 _cpu = new Z80(new Memory(_ram, 16384), new SamplePorts(), new ConsoleLogger());
+
+}
